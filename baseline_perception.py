@@ -122,7 +122,6 @@ class SensorManager:
 
         elif sensor_type == 'LiDAR':
             lidar_bp = self.world.get_blueprint_library().find('sensor.lidar.ray_cast')
-            lidar_bp.set_attribute('range', '100')
             lidar_bp.set_attribute('dropoff_general_rate', lidar_bp.get_attribute('dropoff_general_rate').recommended_values[0])
             lidar_bp.set_attribute('dropoff_intensity_limit', lidar_bp.get_attribute('dropoff_intensity_limit').recommended_values[0])
             lidar_bp.set_attribute('dropoff_zero_intensity', lidar_bp.get_attribute('dropoff_zero_intensity').recommended_values[0])
@@ -141,7 +140,6 @@ class SensorManager:
             # Set default radar parameters
             radar_bp.set_attribute('horizontal_fov', '30')
             radar_bp.set_attribute('vertical_fov', '10')
-            radar_bp.set_attribute('range', '100')
             
             for key in sensor_options:
                 radar_bp.set_attribute(key, sensor_options[key])
@@ -182,6 +180,19 @@ class SensorManager:
         points = np.frombuffer(image.raw_data, dtype=np.dtype('f4'))
         points = np.reshape(points, (int(points.shape[0] / 4), 4))
         lidar_data = np.array(points[:, :2])
+        
+        # 逆时针旋转LiDAR点云90度
+        # 创建旋转矩阵: [[cos(theta), -sin(theta)], [sin(theta), cos(theta)]]
+        # 对于逆时针旋转90度，theta = 90°，cos(90°) = 0, sin(90°) = 1
+        # 旋转矩阵变为: [[0, -1], [1, 0]]
+        # rotation_matrix = np.array([[0, -1], [1, 0]])
+        # 顺时针旋转90度的旋转矩阵
+        rotation_matrix = np.array([[0, 1], [-1, 0]])
+        
+        # 应用旋转
+        lidar_data = np.dot(lidar_data, rotation_matrix.T)
+        
+        # 继续处理点云数据
         lidar_data *= min(disp_size) / lidar_range
         lidar_data += (0.5 * disp_size[0], 0.5 * disp_size[1])
         lidar_data = np.fabs(lidar_data)
@@ -539,6 +550,10 @@ def run_simulation(args, client):
         # Display manager - modified to 3x3 grid to accommodate more sensors
         display_manager = DisplayManager(grid_size=[3, 4], window_size=[args.width, args.height])
 
+        # 创建传感器时使用命令行参数设置range
+        range_str = str(args.range)  # 将range转换为字符串
+        print(f"Sensor range set to: {range_str} meters")
+
         # Create sensors - First row: Cameras
         # Front camera
         SensorManager(world, display_manager, 'RGBCamera', 
@@ -560,41 +575,42 @@ def run_simulation(args, client):
                      carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=180)), 
                      vehicle, {}, display_pos=[0, 3], sensor_name="Rear Camera")
         
-        # Second row: Radars
+        # Second row: Radars - 使用命令行参数设置range
         # Forward radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
                      display_pos=[1, 1], sensor_name="Front Radar")
         
         # Left radar
         SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=0, z=1.0), carla.Rotation(yaw=-90)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
+                     carla.Transform(carla.Location(x=-2, z=1.0), carla.Rotation(yaw=-90)), 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
                      display_pos=[1, 0], sensor_name="Left Radar")
         
         # Right radar
         SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=0, z=1.0), carla.Rotation(yaw=90)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
+                     carla.Transform(carla.Location(x=-2, z=1.0), carla.Rotation(yaw=90)), 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
                      display_pos=[1, 2], sensor_name="Right Radar")
         
         # Rear radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=-2.0, z=1.0), carla.Rotation(yaw=180)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
                      display_pos=[1, 3], sensor_name="Rear Radar")
-
         
-        # Third row: LiDAR and additional sensors
+        # Third row: LiDAR and additional sensors - 使用命令行参数设置range
         # Forward LiDAR
         SensorManager(world, display_manager, 'LiDAR', 
                      carla.Transform(carla.Location(x=0, z=2.4)), 
-                     vehicle, {'channels': '32', 'range': '50', 'points_per_second': '100000', 'rotation_frequency': '20'}, 
+                     vehicle, {'channels': '32', 'range': range_str, 'points_per_second': '100000', 'rotation_frequency': '20'}, 
                      display_pos=[2, 1], sensor_name="LiDAR")
         
-
-        
+        # 添加鸟瞰图 (Bird's eye view)
+        SensorManager(world, display_manager, 'RGBCamera', 
+                     carla.Transform(carla.Location(x=0, z=30.0), carla.Rotation(pitch=-90)), 
+                     vehicle, {'fov': '90'}, display_pos=[2, 0], sensor_name="Bird's Eye View")
 
         # Simulation loop
         call_exit = False
@@ -684,6 +700,12 @@ def main():
         dest='autopilot',
         action='store_false',
         help='Disable vehicle autopilot')
+    argparser.add_argument(
+        '--range',
+        metavar='R',
+        default=50,
+        type=int,
+        help='Detection range for radar and lidar sensors in meters (default: 50)')
 
     args = argparser.parse_args()
 
