@@ -47,10 +47,11 @@ This project demonstrates a baseline implementation of an autonomous driving per
    - `--width`: Window width (default: 1280)
    - `--height`: Window height (default: 720)
    - `--vehicles`: Number of additional vehicles to spawn (default: 20)
+   - `--seed`: Random seed for reproducible results (default: 0, which means random behavior)
 
    Example:
    ```bash
-   python baseline_perception.py --sync --width 1600 --height 900 --vehicles 30
+   python baseline_perception.py --sync --width 1600 --height 900 --vehicles 30 --seed 42
    ```
 
 ## Interface Description
@@ -73,6 +74,22 @@ The demo now supports spawning additional vehicles to test sensor perception. By
 - To disable additional vehicles: `--vehicles 0`
 
 These additional vehicles help test the sensors' ability to detect other objects in the environment.
+
+## Reproducible Results
+
+To get reproducible results across different runs, you can use the `--seed` parameter to set a fixed random seed. This ensures:
+
+- The same vehicle models are spawned
+- They appear at the same locations
+- The ego vehicle (your car) starts from the same position
+- The traffic manager uses the same patterns for vehicle movement
+
+Example:
+```bash
+python baseline_perception.py --sync --vehicles 15 --seed 42
+```
+
+When you set a seed, the simulation will first clean up any existing vehicles from previous runs to ensure a consistent environment.
 
 ## Future Development
 

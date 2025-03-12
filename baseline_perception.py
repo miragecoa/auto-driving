@@ -322,6 +322,33 @@ def spawn_surrounding_vehicles(world, number_of_vehicles=20):
     print(f"Spawned {len(vehicle_list)} vehicles")
     return vehicle_list
 
+# Add fixed seed initialization
+def set_random_seed(seed_value):
+    """Set fixed random seed for reproducible results"""
+    if seed_value > 0:
+        random.seed(seed_value)
+        np.random.seed(seed_value)
+        print(f"Random seed set to {seed_value} for reproducible results")
+
+def clean_up_all_vehicles(world):
+    """Remove all vehicles from the world before spawning new ones"""
+    print("Cleaning up all existing vehicles...")
+    # Get all actors in the world
+    actor_list = world.get_actors()
+    # Filter just the vehicles
+    vehicle_list = [actor for actor in actor_list if 'vehicle' in actor.type_id]
+    
+    if vehicle_list:
+        print(f"Removing {len(vehicle_list)} existing vehicles")
+        # Use batch command to efficiently destroy all vehicles
+        client.apply_batch([carla.command.DestroyActor(vehicle) for vehicle in vehicle_list])
+        # Allow some time for the destruction to take effect
+        time.sleep(0.5)
+    else:
+        print("No existing vehicles to remove")
+    
+    return len(vehicle_list)
+
 def run_simulation(args, client):
     """Run simulation"""
     display_manager = None
@@ -331,6 +358,9 @@ def run_simulation(args, client):
     timer = CustomTimer()
 
     try:
+        # Set fixed random seed if specified
+        set_random_seed(args.seed)
+        
         # Get world and settings
         world = client.get_world()
         original_settings = world.get_settings()
@@ -343,9 +373,20 @@ def run_simulation(args, client):
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = 0.05
             world.apply_settings(settings)
+            
+            # Set traffic manager seed if seed is provided
+            if args.seed > 0:
+                traffic_manager.set_random_device_seed(args.seed)
+                print(f"Traffic Manager seed set to {args.seed}")
 
         # Set to clear day
         set_weather_to_clear_noon(world)
+        
+        # Clean up existing vehicles before spawning new ones
+        removed_count = clean_up_all_vehicles(world)
+        
+        # Wait a short moment to ensure vehicles are fully removed
+        time.sleep(1.0)
         
         # Spawn other vehicles in the simulation
         if args.vehicles > 0:
@@ -353,9 +394,15 @@ def run_simulation(args, client):
 
         # Create ego vehicle
         bp = world.get_blueprint_library().filter('model3')[0]
-        vehicle = world.spawn_actor(bp, random.choice(world.get_map().get_spawn_points()))
+        spawn_points = world.get_map().get_spawn_points()
+        # Always use the same spawn point if seed is set
+        spawn_point_index = 0 if args.seed > 0 else random.randint(0, len(spawn_points) - 1)
+        vehicle = world.spawn_actor(bp, spawn_points[spawn_point_index])
         vehicle_list.append(vehicle)
         vehicle.set_autopilot(True)
+        
+        if args.seed > 0:
+            print(f"Spawned ego vehicle at fixed spawn point index: {spawn_point_index}")
 
         # Display manager - 2x3 grid
         display_manager = DisplayManager(grid_size=[2, 3], window_size=[args.width, args.height])
@@ -385,7 +432,7 @@ def run_simulation(args, client):
         # Forward Radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0)), 
-                     vehicle, {'horizontal_fov': '30', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
                      display_pos=[1, 1], sensor_name="Radar")
         
         # Rear camera
@@ -465,12 +512,19 @@ def main():
         default=20,
         type=int,
         help='Number of vehicles to spawn (default: 20)')
+    argparser.add_argument(
+        '--seed',
+        metavar='S',
+        default=0,
+        type=int,
+        help='Random seed for reproducible results (default: 0, which means random behavior)')
 
     args = argparser.parse_args()
 
     try:
+        global client
         client = carla.Client(args.host, args.port)
-        client.set_timeout(5.0)
+        client.set_timeout(10.0)  # Increase timeout for vehicle cleanup
         run_simulation(args, client)
 
     except KeyboardInterrupt:
