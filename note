@@ -1,2 +1,5 @@
 conda activate carla-perception
-python baseline_perception.py --sync --vehicles 10 --seed 42 --range 30 --no-autopilot
+python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --no-autopilot
+python badweather_perception.py --sync --vehicles 50 --seed 42 --range 50 --no-autopilot
+python night_perception.py --sync --vehicles 50 --seed 42 --range 50 --no-autopilot
+python nightbadweather_perception.py --sync --vehicles 50 --seed 42 --range 50 --no-autopilot
