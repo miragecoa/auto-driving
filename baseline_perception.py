@@ -416,29 +416,33 @@ def set_weather_to_clear_noon(world):
     
     return weather
 
-def spawn_surrounding_vehicles(world, number_of_vehicles=20):
+def spawn_surrounding_vehicles(world, number_of_vehicles=20, spawn_points=None):
     """Spawn other vehicles in the simulation"""
     vehicle_blueprints = world.get_blueprint_library().filter('vehicle.*')
     # Filter out bicycles and motorcycles
     vehicle_blueprints = [blueprint for blueprint in vehicle_blueprints if int(blueprint.get_attribute('number_of_wheels')) == 4]
     
-    spawn_points = world.get_map().get_spawn_points()
+    if spawn_points is None:
+        spawn_points = world.get_map().get_spawn_points()
+        
     number_of_spawn_points = len(spawn_points)
 
     if number_of_vehicles < number_of_spawn_points:
         random.shuffle(spawn_points)
     elif number_of_vehicles > number_of_spawn_points:
         number_of_vehicles = number_of_spawn_points
+        print(f"警告: 请求生成 {number_of_vehicles} 辆车，但只有 {number_of_spawn_points} 个可用生成点。")
 
-    # Use command batch to spawn vehicles more efficiently
-    spawn_actors = []
+    # 使用批处理命令来提高效率
+    batch = []
     vehicle_list = []
-
+    
+    # 创建生成命令批处理
     for n, transform in enumerate(spawn_points):
         if n >= number_of_vehicles:
             break
         blueprint = random.choice(vehicle_blueprints)
-        # Set autopilot attribute if it exists
+        # Set attributes if available
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
             blueprint.set_attribute('color', color)
@@ -446,20 +450,30 @@ def spawn_surrounding_vehicles(world, number_of_vehicles=20):
             driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
             blueprint.set_attribute('driver_id', driver_id)
         
-        # Set the blueprint as not invincible
+        # Set the blueprint as autopilot
         if blueprint.has_attribute('role_name'):
             blueprint.set_attribute('role_name', 'autopilot')
 
-        # Spawn the vehicle
-        vehicle = world.spawn_actor(blueprint, transform)
-        vehicle_list.append(vehicle)
-        
-    # Set autopilot for all vehicles
-    for vehicle in vehicle_list:
-        vehicle.set_autopilot(True)
-        
-    print(f"Spawned {len(vehicle_list)} vehicles")
-    return vehicle_list
+        # 添加到批处理
+        batch.append(carla.command.SpawnActor(blueprint, transform)
+                    .then(carla.command.SetAutopilot(carla.command.FutureActor, True)))
+    
+    # 批量执行生成命令
+    for response in client.apply_batch_sync(batch, True):
+        if response.error:
+            print(f"警告: 车辆生成失败: {response.error}")
+        else:
+            vehicle_list.append(response.actor_id)
+    
+    # 获取实际生成的车辆Actor引用
+    actual_vehicles = []
+    for actor_id in vehicle_list:
+        actor = world.get_actor(actor_id)
+        if actor:
+            actual_vehicles.append(actor)
+    
+    print(f"成功生成 {len(actual_vehicles)} 辆车 (请求数量: {number_of_vehicles})")
+    return actual_vehicles
 
 # Add fixed seed initialization
 def set_random_seed(seed_value):
@@ -527,16 +541,34 @@ def run_simulation(args, client):
         # Wait a short moment to ensure vehicles are fully removed
         time.sleep(1.0)
         
-        # Spawn other vehicles in the simulation
-        if args.vehicles > 0:
-            other_vehicles = spawn_surrounding_vehicles(world, args.vehicles)
-
-        # Create ego vehicle
+        # Create ego vehicle FIRST (before spawning other vehicles)
         bp = world.get_blueprint_library().filter('model3')[0]
         spawn_points = world.get_map().get_spawn_points()
-        # Always use the same spawn point if seed is set
-        spawn_point_index = 0 if args.seed > 0 else random.randint(0, len(spawn_points) - 1)
-        vehicle = world.spawn_actor(bp, spawn_points[spawn_point_index])
+        
+        # 尝试不同的生成点，直到找到一个没有碰撞的位置
+        vehicle = None
+        if args.seed > 0:
+            # 使用固定种子时，从第一个点开始尝试
+            spawn_indices = list(range(len(spawn_points)))
+        else:
+            # 随机情况下，打乱生成点顺序
+            spawn_indices = list(range(len(spawn_points)))
+            random.shuffle(spawn_indices)
+        
+        for spawn_idx in spawn_indices:
+            try:
+                vehicle = world.spawn_actor(bp, spawn_points[spawn_idx])
+                print(f"Spawned ego vehicle at spawn point index: {spawn_idx}")
+                break
+            except RuntimeError as e:
+                if "collision" in str(e).lower():
+                    continue  # 尝试下一个生成点
+                else:
+                    raise  # 如果是其他错误，则抛出
+        
+        if vehicle is None:
+            raise RuntimeError("Could not find a suitable spawn point for ego vehicle after trying all available points")
+        
         vehicle_list.append(vehicle)
         
         # Set autopilot based on command line argument
@@ -544,8 +576,11 @@ def run_simulation(args, client):
         autopilot_status = "enabled" if args.autopilot else "disabled"
         print(f"Autopilot is {autopilot_status}")
         
-        if args.seed > 0:
-            print(f"Spawned ego vehicle at fixed spawn point index: {spawn_point_index}")
+        # NOW spawn other vehicles in the simulation
+        if args.vehicles > 0:
+            # 更新可用生成点列表，移除已被使用的点
+            available_spawn_points = [p for i, p in enumerate(spawn_points) if i not in [spawn_idx]]
+            other_vehicles = spawn_surrounding_vehicles(world, min(args.vehicles, len(available_spawn_points)))
 
         # Display manager - modified to 3x3 grid to accommodate more sensors
         display_manager = DisplayManager(grid_size=[3, 4], window_size=[args.width, args.height])
