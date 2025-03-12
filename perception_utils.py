@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-
-# Bad Weather Condition Demo for Autonomous Driving Perception System
-# Demonstrating Camera, LiDAR and Radar data visualization in adverse weather conditions
-
 import glob
 import os
 import sys
@@ -10,6 +5,8 @@ import argparse
 import random
 import time
 import numpy as np
+import math
+import cv2
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -43,7 +40,7 @@ class DisplayManager:
         pygame.init()
         pygame.font.init()
         self.display = pygame.display.set_mode(window_size, pygame.HWSURFACE | pygame.DOUBLEBUF)
-        pygame.display.set_caption("Autonomous Driving Perception System - Bad Weather Condition Demo")
+        pygame.display.set_caption("Autonomous Driving Perception System - Daylight Baseline Demo")
 
         self.grid_size = grid_size
         self.window_size = window_size
@@ -398,27 +395,7 @@ class SensorManager:
     def destroy(self):
         self.sensor.destroy()
 
-def set_weather_to_bad(world):
-    """Set weather to adverse conditions (heavy rain)"""
-    weather = world.get_weather()
-    
-    # Set to bad weather
-    weather.sun_altitude_angle = 35.0  # Low sun to create shadows
-    weather.cloudiness = 80.0  # Heavy cloud cover (0-100)
-    weather.precipitation = 80.0  # Heavy rain (0-100)
-    weather.precipitation_deposits = 90.0  # Puddles (0-100)
-    weather.wind_intensity = 70.0  # Strong wind (0-100)
-    weather.fog_density = 40.0  # Moderate fog (0-100)
-    weather.fog_distance = 40.0  # Fog visibility distance
-    weather.fog_falloff = 6.0  # How quickly fog fades
-    weather.wetness = 100.0  # Road wetness (0-100)
-    weather.scattering_intensity = 1.0  # Light scattering in atmosphere
-    
-    world.set_weather(weather)
-    
-    return weather
-
-def spawn_surrounding_vehicles(world, number_of_vehicles=20, spawn_points=None):
+def spawn_surrounding_vehicles(client, world, number_of_vehicles=20, spawn_points=None):
     """Spawn other vehicles in the simulation"""
     vehicle_blueprints = world.get_blueprint_library().filter('vehicle.*')
     # Filter out bicycles and motorcycles
@@ -504,259 +481,150 @@ def clean_up_all_vehicles(world):
     
     return len(vehicle_list)
 
-def run_simulation(args, client):
-    """Run simulation"""
-    display_manager = None
-    vehicle = None
-    vehicle_list = []
-    other_vehicles = []
-    timer = CustomTimer()
+def set_weather_preset(world, preset="default"):
+    """Set weather based on predefined presets"""
+    weather = world.get_weather()
+    
+    # 根据预设名称设置不同的天气条件
+    if preset == "default":
+        # 晴朗的白天
+        weather.sun_altitude_angle = 85.0  # 太阳高度角（正午）
+        weather.cloudiness = 10.0  # 云量 (0-100)
+        weather.precipitation = 0.0  # 降水量 (0-100)
+        weather.precipitation_deposits = 0.0  # 地面积水 (0-100)
+        weather.wind_intensity = 10.0  # 风强度 (0-100)
+        weather.fog_density = 0.0  # 雾密度 (0-100)
+        weather.fog_distance = 0.0  # 雾可见距离
+        weather.wetness = 0.0  # 湿度 (0-100)
+        weather.sun_azimuth_angle = 45.0  # 太阳方位角
+        weather.fog_falloff = 0.0  # 雾衰减
+    
+    elif preset == "badweather":
+        # 恶劣天气 - 强降雨和大风
+        weather.sun_altitude_angle = 45.0  # 较低的太阳角度
+        weather.cloudiness = 90.0  # 高云量
+        weather.precipitation = 80.0  # 大雨
+        weather.precipitation_deposits = 60.0  # 积水
+        weather.wind_intensity = 70.0  # 大风
+        weather.fog_density = 40.0  # 轻雾
+        weather.fog_distance = 40.0  
+        weather.wetness = 80.0  # 很湿
+        weather.sun_azimuth_angle = 45.0  
+        weather.fog_falloff = 1.0  
+    
+    elif preset == "night":
+        # 晴朗的夜晚
+        weather.sun_altitude_angle = -80.0  # 太阳在地平线以下（夜晚）
+        weather.cloudiness = 10.0  # 少云
+        weather.precipitation = 0.0  # 无雨
+        weather.precipitation_deposits = 0.0  # 无积水
+        weather.wind_intensity = 10.0  # 微风
+        weather.fog_density = 0.0  # 无雾
+        weather.fog_distance = 0.0  
+        weather.wetness = 0.0  # 干燥
+        weather.sun_azimuth_angle = 225.0  # 太阳方位角（夜晚）
+        weather.fog_falloff = 0.0  
+    
+    elif preset == "badweather_night":
+        # 恶劣天气的夜晚 - 雨夜
+        weather.sun_altitude_angle = -80.0  # 夜晚
+        weather.cloudiness = 90.0  # 多云
+        weather.precipitation = 80.0  # 大雨
+        weather.precipitation_deposits = 60.0  # 积水
+        weather.wind_intensity = 70.0  # 大风
+        weather.fog_density = 50.0  # 大雾
+        weather.fog_distance = 25.0  # 雾气浓重，可见度低
+        weather.wetness = 80.0  # 很湿
+        weather.sun_azimuth_angle = 225.0  
+        weather.fog_falloff = 1.0  
+    
+    else:
+        print(f"未知的天气预设: {preset}，使用默认晴天")
+        # 使用默认晴天设置
+        weather.sun_altitude_angle = 85.0
+        weather.cloudiness = 10.0
+        weather.precipitation = 0.0
+        weather.precipitation_deposits = 0.0
+        weather.wind_intensity = 10.0
+        weather.fog_density = 0.0
+        weather.fog_distance = 0.0
+        weather.wetness = 0.0
+    
+    world.set_weather(weather)
+    print(f"已设置天气为: {preset}")
+    
+    return weather
 
-    try:
-        # Set fixed random seed if specified
-        set_random_seed(args.seed)
-        
-        # Get world and settings
-        world = client.get_world()
-        original_settings = world.get_settings()
+def initialize_world(client, args):
+    """初始化模拟世界，设置环境和车辆"""
+    
+    # 获取世界和设置
+    world = client.get_world()
+    original_settings = world.get_settings()
+    
+    # 设置固定随机种子（如果指定）
+    set_random_seed(args.seed)
 
-        # Setup synchronous mode
-        if args.sync:
-            traffic_manager = client.get_trafficmanager(8000)
-            settings = world.get_settings()
-            traffic_manager.set_synchronous_mode(True)
-            settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 0.05
-            world.apply_settings(settings)
-            
-            # Set traffic manager seed if seed is provided
-            if args.seed > 0:
-                traffic_manager.set_random_device_seed(args.seed)
-                print(f"Traffic Manager seed set to {args.seed}")
-
-        # Set to bad weather conditions
-        set_weather_to_bad(world)
+    # 同步模式设置
+    if args.sync:
+        traffic_manager = client.get_trafficmanager(8000)
+        settings = world.get_settings()
+        traffic_manager.set_synchronous_mode(True)
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 0.05
+        world.apply_settings(settings)
         
-        # Clean up existing vehicles before spawning new ones
-        removed_count = clean_up_all_vehicles(world)
-        
-        # Wait a short moment to ensure vehicles are fully removed
-        time.sleep(1.0)
-        
-        # Create ego vehicle FIRST (before spawning other vehicles)
-        bp = world.get_blueprint_library().filter('model3')[0]
-        spawn_points = world.get_map().get_spawn_points()
-        
-        # 尝试不同的生成点，直到找到一个没有碰撞的位置
-        vehicle = None
+        # 如果提供了种子，设置交通管理器种子
         if args.seed > 0:
-            # 使用固定种子时，从第一个点开始尝试
-            spawn_indices = list(range(len(spawn_points)))
-        else:
-            # 随机情况下，打乱生成点顺序
-            spawn_indices = list(range(len(spawn_points)))
-            random.shuffle(spawn_indices)
-        
-        for spawn_idx in spawn_indices:
-            try:
-                vehicle = world.spawn_actor(bp, spawn_points[spawn_idx])
-                print(f"Spawned ego vehicle at spawn point index: {spawn_idx}")
-                break
-            except RuntimeError as e:
-                if "collision" in str(e).lower():
-                    continue  # 尝试下一个生成点
-                else:
-                    raise  # 如果是其他错误，则抛出
-        
-        if vehicle is None:
-            raise RuntimeError("Could not find a suitable spawn point for ego vehicle after trying all available points")
-        
-        vehicle_list.append(vehicle)
-        
-        # Set autopilot based on command line argument
-        vehicle.set_autopilot(args.autopilot)
-        autopilot_status = "enabled" if args.autopilot else "disabled"
-        print(f"Autopilot is {autopilot_status}")
-        
-        # NOW spawn other vehicles in the simulation
-        if args.vehicles > 0:
-            # 更新可用生成点列表，移除已被使用的点
-            available_spawn_points = [p for i, p in enumerate(spawn_points) if i not in [spawn_idx]]
-            other_vehicles = spawn_surrounding_vehicles(world, min(args.vehicles, len(available_spawn_points)), available_spawn_points)
+            traffic_manager.set_random_device_seed(args.seed)
+            print(f"交通管理器种子设置为 {args.seed}")
+    
+    # 设置天气 - 使用命令行参数提供的天气预设
+    weather_preset = getattr(args, 'weather', 'default')
+    set_weather_preset(world, weather_preset)
+    
+    # 清理现有车辆
+    removed_count = clean_up_all_vehicles(world)
+    time.sleep(1.0)  # 等待片刻确保车辆完全移除
+    
+    return world, original_settings
 
-        # Display manager - modified to 3x3 grid to accommodate more sensors
-        display_manager = DisplayManager(grid_size=[3, 4], window_size=[args.width, args.height])
-
-        # 创建传感器时使用命令行参数设置range
-        range_str = str(args.range)  # 将range转换为字符串
-        print(f"Sensor range set to: {range_str} meters")
-
-        # Create sensors - First row: Cameras
-        # Front camera
-        SensorManager(world, display_manager, 'RGBCamera', 
-                     carla.Transform(carla.Location(x=2.0, z=2.0), carla.Rotation(yaw=0)), 
-                     vehicle, {}, display_pos=[0, 1], sensor_name="Front Camera")
-        
-        # Left camera
-        SensorManager(world, display_manager, 'RGBCamera', 
-                     carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=-90)), 
-                     vehicle, {}, display_pos=[0, 0], sensor_name="Left Camera")
-        
-        # Right camera
-        SensorManager(world, display_manager, 'RGBCamera', 
-                     carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=90)), 
-                     vehicle, {}, display_pos=[0, 2], sensor_name="Right Camera")
-        
-        # Rear camera
-        SensorManager(world, display_manager, 'RGBCamera', 
-                     carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=180)), 
-                     vehicle, {}, display_pos=[0, 3], sensor_name="Rear Camera")
-        
-        # Second row: Radars - 使用命令行参数设置range
-        # Forward radar
-        SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
-                     display_pos=[1, 1], sensor_name="Front Radar")
-        
-        # Left radar
-        SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=-2, z=1.0), carla.Rotation(yaw=-90)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
-                     display_pos=[1, 0], sensor_name="Left Radar")
-        
-        # Right radar
-        SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=-2, z=1.0), carla.Rotation(yaw=90)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
-                     display_pos=[1, 2], sensor_name="Right Radar")
-        
-        # Rear radar
-        SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=-2.0, z=1.0), carla.Rotation(yaw=180)), 
-                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': range_str}, 
-                     display_pos=[1, 3], sensor_name="Rear Radar")
-        
-        # Third row: LiDAR and additional sensors - 使用命令行参数设置range
-        # Forward LiDAR
-        SensorManager(world, display_manager, 'LiDAR', 
-                     carla.Transform(carla.Location(x=0, z=2.4)), 
-                     vehicle, {'channels': '32', 'range': range_str, 'points_per_second': '100000', 'rotation_frequency': '20'}, 
-                     display_pos=[2, 1], sensor_name="LiDAR")
-        
-        # 添加鸟瞰图 (Bird's eye view)
-        SensorManager(world, display_manager, 'RGBCamera', 
-                     carla.Transform(carla.Location(x=0, z=30.0), carla.Rotation(pitch=-90)), 
-                     vehicle, {'fov': '90'}, display_pos=[2, 0], sensor_name="Bird's Eye View")
-
-        # Simulation loop
-        call_exit = False
-        time_init_sim = timer.time()
-        print(f"Bad weather condition demo started with {len(other_vehicles)} additional vehicles. Press ESC or Q to exit.")
-        
-        while True:
-            # Carla tick
-            if args.sync:
-                world.tick()
+def spawn_ego_vehicle(world, args):
+    """生成自我驾驶车辆"""
+    # 创建自我车辆
+    bp = world.get_blueprint_library().filter('model3')[0]
+    spawn_points = world.get_map().get_spawn_points()
+    
+    # 尝试不同的生成点，直到找到一个没有碰撞的位置
+    vehicle = None
+    if args.seed > 0:
+        # 使用固定种子时，从第一个点开始尝试
+        spawn_indices = list(range(len(spawn_points)))
+    else:
+        # 随机情况下，打乱生成点顺序
+        spawn_indices = list(range(len(spawn_points)))
+        random.shuffle(spawn_indices)
+    
+    spawn_idx = None
+    for idx in spawn_indices:
+        try:
+            vehicle = world.spawn_actor(bp, spawn_points[idx])
+            spawn_idx = idx
+            print(f"在生成点索引 {idx} 成功生成自我车辆")
+            break
+        except RuntimeError as e:
+            if "collision" in str(e).lower():
+                continue  # 尝试下一个生成点
             else:
-                world.wait_for_tick()
+                raise  # 如果是其他错误，则抛出
+    
+    if vehicle is None:
+        raise RuntimeError("在尝试所有可用点后，无法找到适合自我车辆的生成点")
+    
+    # 设置自动驾驶
+    vehicle.set_autopilot(args.autopilot)
+    autopilot_status = "已启用" if args.autopilot else "已禁用"
+    print(f"自动驾驶{autopilot_status}")
+    
+    return vehicle, spawn_idx, spawn_points
 
-            # Render received data
-            display_manager.render()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    call_exit = True
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == K_ESCAPE or event.key == K_q:
-                        call_exit = True
-                        break
-
-            if call_exit:
-                break
-
-    finally:
-        if display_manager:
-            display_manager.destroy()
-
-        # Clean up all vehicles
-        all_vehicles = vehicle_list + other_vehicles
-        client.apply_batch([carla.command.DestroyActor(x) for x in all_vehicles])
-        world.apply_settings(original_settings)
-
-
-def main():
-    """Main function"""
-    argparser = argparse.ArgumentParser(description='CARLA Autonomous Driving Perception System - Bad Weather Condition Demo')
-    argparser.add_argument(
-        '--host',
-        metavar='H',
-        default='127.0.0.1',
-        help='CARLA server IP (default: 127.0.0.1)')
-    argparser.add_argument(
-        '-p', '--port',
-        metavar='P',
-        default=2000,
-        type=int,
-        help='CARLA server port (default: 2000)')
-    argparser.add_argument(
-        '--sync',
-        action='store_true',
-        help='Enable synchronous mode')
-    argparser.add_argument(
-        '--width',
-        metavar='W',
-        default=1280,
-        type=int,
-        help='Window width (default: 1280)')
-    argparser.add_argument(
-        '--height',
-        metavar='H',
-        default=720,
-        type=int,
-        help='Window height (default: 720)')
-    argparser.add_argument(
-        '--vehicles',
-        metavar='N',
-        default=20,
-        type=int,
-        help='Number of vehicles to spawn (default: 20)')
-    argparser.add_argument(
-        '--seed',
-        metavar='S',
-        default=0,
-        type=int,
-        help='Random seed for reproducible results (default: 0, which means random behavior)')
-    argparser.add_argument(
-        '--autopilot',
-        action='store_true',
-        default=True,
-        help='Enable vehicle autopilot (default: True)')
-    argparser.add_argument(
-        '--no-autopilot',
-        dest='autopilot',
-        action='store_false',
-        help='Disable vehicle autopilot')
-    argparser.add_argument(
-        '--range',
-        metavar='R',
-        default=50,
-        type=int,
-        help='Detection range for radar and lidar sensors in meters (default: 50)')
-
-    args = argparser.parse_args()
-
-    try:
-        global client
-        client = carla.Client(args.host, args.port)
-        client.set_timeout(10.0)  # Increase timeout for vehicle cleanup
-        run_simulation(args, client)
-
-    except KeyboardInterrupt:
-        print('\nCancelled by user. Bye!')
-
-if __name__ == '__main__':
-    # Import required libraries
-    import math
-    import cv2
-    main() 
