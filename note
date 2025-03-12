@@ -1,2 +1,2 @@
 conda activate carla-perception
-python baseline_perception.py --sync --vehicles 10 --seed 42
+python baseline_perception.py --sync --vehicles 10 --seed 42 --no-autopilot

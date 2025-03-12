@@ -212,6 +212,27 @@ class SensorManager:
         # Calculate center point for this specific display cell
         center_x, center_y = int(disp_size[0] / 2), int(disp_size[1] / 2)
         
+        # Determine view rotation based on sensor name
+        view_rotation = 0  # Default no rotation
+        # Flag to indicate if we need to flip the image vertically (mirror)
+        need_vertical_flip = False
+        # Flag to indicate if we need to flip the image horizontally (mirror)
+        need_horizontal_flip = False
+        
+        if self.sensor_name:
+            if "Left Radar" in self.sensor_name:
+                view_rotation = 90  # 逆时针旋转90度
+                need_vertical_flip = True  # 为左侧雷达添加上下镜像
+            elif "Front Radar" in self.sensor_name:
+                view_rotation = -90   # 顺时针旋转90度
+                need_horizontal_flip = True  # 为前雷达添加左右镜像
+            elif "Right Radar" in self.sensor_name:
+                view_rotation = 90  # 逆时针旋转90度
+                need_vertical_flip = True  # 为右侧雷达添加上下镜像
+            elif "Rear Radar" in self.sensor_name:
+                view_rotation = -90   # 顺时针旋转90度
+                need_horizontal_flip = True  # 为后雷达添加左右镜像
+        
         # Draw radar background with grid and axes
         # Center point (vehicle position)
         cv2.circle(radar_img, (center_x, center_y), 5, (0, 0, 255), -1)
@@ -230,20 +251,34 @@ class SensorManager:
             elif "Rear Radar" in self.sensor_name:
                 heading_angle = math.pi     # 180 degrees
         
-        # Draw direction arrow
-        end_x = center_x + int(direction_indicator_length * math.sin(heading_angle))
-        end_y = center_y - int(direction_indicator_length * math.cos(heading_angle))
-        cv2.arrowedLine(radar_img, (center_x, center_y), (end_x, end_y), 
-                        indicator_color, 2, tipLength=0.4)
-        
+        # Apply view rotation to heading angle (in radians)
+        view_rotation_rad = math.radians(view_rotation)
+        heading_angle_adjusted = heading_angle - view_rotation_rad
+                        
+
+        # Draw rotated coordinate grid
         # Draw concentric circles
         for r in range(1, 6):
             radius = int(min(disp_size) / 12 * r)
             cv2.circle(radar_img, (center_x, center_y), radius, (50, 50, 50), 1)
         
-        # Draw coordinate axes
-        cv2.line(radar_img, (center_x, 0), (center_x, disp_size[1]), (50, 50, 50), 1)
-        cv2.line(radar_img, (0, center_y), (disp_size[0], center_y), (50, 50, 50), 1)
+        # Draw rotated coordinate axes
+        # First axis
+        axis1_start_x = center_x + int(disp_size[0] * 0.5 * math.sin(view_rotation_rad))
+        axis1_start_y = center_y - int(disp_size[1] * 0.5 * math.cos(view_rotation_rad))
+        axis1_end_x = center_x - int(disp_size[0] * 0.5 * math.sin(view_rotation_rad))
+        axis1_end_y = center_y + int(disp_size[1] * 0.5 * math.cos(view_rotation_rad))
+        
+        # Second axis (perpendicular to first)
+        axis2_start_x = center_x + int(disp_size[0] * 0.5 * math.sin(view_rotation_rad + math.pi/2))
+        axis2_start_y = center_y - int(disp_size[1] * 0.5 * math.cos(view_rotation_rad + math.pi/2))
+        axis2_end_x = center_x - int(disp_size[0] * 0.5 * math.sin(view_rotation_rad + math.pi/2))
+        axis2_end_y = center_y + int(disp_size[1] * 0.5 * math.cos(view_rotation_rad + math.pi/2))
+        
+        cv2.line(radar_img, (int(axis1_start_x), int(axis1_start_y)), 
+                 (int(axis1_end_x), int(axis1_end_y)), (50, 50, 50), 1)
+        cv2.line(radar_img, (int(axis2_start_x), int(axis2_start_y)), 
+                 (int(axis2_end_x), int(axis2_end_y)), (50, 50, 50), 1)
         
         # Determine radar orientation based on sensor_name for detected points
         orientation_offset = 0.0
@@ -257,9 +292,6 @@ class SensorManager:
         
         # Draw range indicator text
         max_range = float(self.sensor_options.get('range', '50'))
-        cv2.putText(radar_img, f"Range: {int(max_range)}m", 
-                   (center_x - 60, disp_size[1] - 20), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 150), 1)
         
         for detect in radar_data:
             # Calculate point position
@@ -270,10 +302,22 @@ class SensorManager:
             # Apply orientation offset to adjust the visualization direction
             adjusted_azimuth = detect.azimuth + orientation_offset
             
-            # Calculate point coordinates with adjusted orientation
-            # Forward is up, right is right on the display
-            x = center_x + int(distance * math.sin(adjusted_azimuth) * scale)
-            y = center_y - int(distance * math.cos(adjusted_azimuth) * scale)
+            # Apply view rotation to the point position
+            final_azimuth = adjusted_azimuth - view_rotation_rad
+            
+            # Calculate point coordinates with adjusted orientation and view rotation
+            x = center_x + int(distance * math.sin(final_azimuth) * scale)
+            y = center_y - int(distance * math.cos(final_azimuth) * scale)
+            
+            # For left and right radar, flip points vertically if needed
+            if need_vertical_flip:
+                # Mirror the y-coordinate around the center
+                y = center_y + (center_y - y)
+            
+            # For front and rear radar, flip points horizontally if needed
+            if need_horizontal_flip:
+                # Mirror the x-coordinate around the center
+                x = center_x + (center_x - x)
             
             if 0 <= x < disp_size[0] and 0 <= y < disp_size[1]:
                 # Color based on velocity (faster is redder)
@@ -290,10 +334,36 @@ class SensorManager:
                 # For significant velocities, draw a line indicating direction and speed
                 if abs(velocity) > 5.0:
                     line_length = min(15, max(5, int(abs(velocity))))
-                    end_x = x + int(line_length * math.sin(adjusted_azimuth))
-                    end_y = y - int(line_length * math.cos(adjusted_azimuth))
+                    # Also rotate the velocity direction indicator
+                    # For flipped radar, also adjust the direction line
+                    end_x = x
+                    end_y = y
+                    
+                    if need_vertical_flip and need_horizontal_flip:
+                        # Both vertical and horizontal flip
+                        end_x = x - int(line_length * math.sin(final_azimuth))
+                        end_y = y + int(line_length * math.cos(final_azimuth))
+                    elif need_vertical_flip:
+                        # Only vertical flip
+                        end_x = x + int(line_length * math.sin(final_azimuth))
+                        end_y = y + int(line_length * math.cos(final_azimuth))
+                    elif need_horizontal_flip:
+                        # Only horizontal flip
+                        end_x = x - int(line_length * math.sin(final_azimuth))
+                        end_y = y - int(line_length * math.cos(final_azimuth))
+                    else:
+                        # No flip
+                        end_x = x + int(line_length * math.sin(final_azimuth))
+                        end_y = y - int(line_length * math.cos(final_azimuth))
+                        
                     cv2.line(radar_img, (x, y), (end_x, end_y), color, 1)
         
+        # If we need to flip the image vertically (for left and right radar)
+        if need_vertical_flip:
+            # Note: We don't flip here anymore since we're flipping the individual points instead
+            # This gives us more control over direction indicators
+            pass
+            
         if self.display_man.render_enabled():
             # Convert OpenCV image (BGR) to RGB for pygame
             radar_img_rgb = cv2.cvtColor(radar_img, cv2.COLOR_BGR2RGB)
@@ -457,7 +527,11 @@ def run_simulation(args, client):
         spawn_point_index = 0 if args.seed > 0 else random.randint(0, len(spawn_points) - 1)
         vehicle = world.spawn_actor(bp, spawn_points[spawn_point_index])
         vehicle_list.append(vehicle)
-        vehicle.set_autopilot(True)
+        
+        # Set autopilot based on command line argument
+        vehicle.set_autopilot(args.autopilot)
+        autopilot_status = "enabled" if args.autopilot else "disabled"
+        print(f"Autopilot is {autopilot_status}")
         
         if args.seed > 0:
             print(f"Spawned ego vehicle at fixed spawn point index: {spawn_point_index}")
@@ -490,25 +564,25 @@ def run_simulation(args, client):
         # Forward radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0)), 
-                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
                      display_pos=[1, 1], sensor_name="Front Radar")
         
         # Left radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=0, z=1.0), carla.Rotation(yaw=-90)), 
-                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
                      display_pos=[1, 0], sensor_name="Left Radar")
         
         # Right radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=0, z=1.0), carla.Rotation(yaw=90)), 
-                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
                      display_pos=[1, 2], sensor_name="Right Radar")
         
         # Rear radar
         SensorManager(world, display_manager, 'Radar', 
                      carla.Transform(carla.Location(x=-2.0, z=1.0), carla.Rotation(yaw=180)), 
-                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     vehicle, {'horizontal_fov': '120', 'vertical_fov': '10', 'range': '50'}, 
                      display_pos=[1, 3], sensor_name="Rear Radar")
 
         
@@ -600,6 +674,16 @@ def main():
         default=0,
         type=int,
         help='Random seed for reproducible results (default: 0, which means random behavior)')
+    argparser.add_argument(
+        '--autopilot',
+        action='store_true',
+        default=True,
+        help='Enable vehicle autopilot (default: True)')
+    argparser.add_argument(
+        '--no-autopilot',
+        dest='autopilot',
+        action='store_false',
+        help='Disable vehicle autopilot')
 
     args = argparser.parse_args()
 
