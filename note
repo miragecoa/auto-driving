@@ -1,0 +1,2 @@
+conda activate carla-perception
+python baseline_perception.py --sync --vehicles 15
