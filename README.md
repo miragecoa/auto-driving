@@ -56,10 +56,16 @@ This project demonstrates a baseline implementation of an autonomous driving per
 
 ## Interface Description
 
-The demo interface contains 6 windows, arranged in a 2x3 grid:
+The demo interface contains 9 windows, arranged in a 3x3 grid:
 
-- Top row: Front camera, Left camera, Right camera
-- Bottom row: LiDAR point cloud, Radar targets, Rear camera
+- Top row: Left camera, Front camera, Right camera
+- Middle row: Left radar, Front radar, Right radar
+- Bottom row: Rear camera, LiDAR point cloud, Rear radar
+
+This comprehensive sensor setup provides 360-degree awareness around the vehicle:
+- Four cameras (front, left, right, rear) provide visual information
+- Four radars (front, left, right, rear) detect moving objects and their velocities
+- One LiDAR provides detailed 3D point cloud of the environment
 
 ## Control
 

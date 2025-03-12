@@ -53,11 +53,17 @@ class DisplayManager:
         return [int(self.window_size[0]), int(self.window_size[1])]
 
     def get_display_size(self):
-        return [int(self.window_size[0]/self.grid_size[1]), int(self.window_size[1]/self.grid_size[0])]
+        # Calculate the size of each grid cell with proper padding
+        width = int(self.window_size[0]/self.grid_size[1])
+        height = int(self.window_size[1]/self.grid_size[0])
+        return [width, height]
 
     def get_display_offset(self, gridPos):
+        # Calculate the offset for each grid cell to ensure proper alignment
         dis_size = self.get_display_size()
-        return [int(gridPos[1] * dis_size[0]), int(gridPos[0] * dis_size[1])]
+        x_offset = int(gridPos[1] * dis_size[0])
+        y_offset = int(gridPos[0] * dis_size[1])
+        return [x_offset, y_offset]
 
     def add_sensor(self, sensor):
         self.sensor_list.append(sensor)
@@ -198,15 +204,37 @@ class SensorManager:
         t_start = self.timer.time()
         
         disp_size = self.display_man.get_display_size()
-        radar_img_size = (disp_size[0], disp_size[1], 3)
-        radar_img = np.zeros(radar_img_size)
         
-        # Draw radar data
+        # Draw radar data with proper sizing to ensure it fits the display area
+        # Use exact display dimensions to avoid any offset
         radar_img = np.zeros((disp_size[1], disp_size[0], 3), dtype=np.uint8)
         
-        # Draw origin point in the center of the radar image
+        # Calculate center point for this specific display cell
         center_x, center_y = int(disp_size[0] / 2), int(disp_size[1] / 2)
+        
+        # Draw radar background with grid and axes
+        # Center point (vehicle position)
         cv2.circle(radar_img, (center_x, center_y), 5, (0, 0, 255), -1)
+        
+        # Draw direction indicator
+        direction_indicator_length = 20
+        indicator_color = (150, 150, 0)  # Yellow-ish
+        
+        # Determine radar orientation based on sensor_name for direction indicator
+        heading_angle = 0.0  # Default forward
+        if self.sensor_name:
+            if "Left Radar" in self.sensor_name:
+                heading_angle = -math.pi/2  # -90 degrees
+            elif "Right Radar" in self.sensor_name:
+                heading_angle = math.pi/2   # 90 degrees
+            elif "Rear Radar" in self.sensor_name:
+                heading_angle = math.pi     # 180 degrees
+        
+        # Draw direction arrow
+        end_x = center_x + int(direction_indicator_length * math.sin(heading_angle))
+        end_y = center_y - int(direction_indicator_length * math.cos(heading_angle))
+        cv2.arrowedLine(radar_img, (center_x, center_y), (end_x, end_y), 
+                        indicator_color, 2, tipLength=0.4)
         
         # Draw concentric circles
         for r in range(1, 6):
@@ -217,15 +245,35 @@ class SensorManager:
         cv2.line(radar_img, (center_x, 0), (center_x, disp_size[1]), (50, 50, 50), 1)
         cv2.line(radar_img, (0, center_y), (disp_size[0], center_y), (50, 50, 50), 1)
         
+        # Determine radar orientation based on sensor_name for detected points
+        orientation_offset = 0.0
+        if self.sensor_name:
+            if "Left Radar" in self.sensor_name:
+                orientation_offset = -math.pi/2  # -90 degrees
+            elif "Right Radar" in self.sensor_name:
+                orientation_offset = math.pi/2   # 90 degrees
+            elif "Rear Radar" in self.sensor_name:
+                orientation_offset = math.pi     # 180 degrees
+        
+        # Draw range indicator text
+        max_range = float(self.sensor_options.get('range', '50'))
+        cv2.putText(radar_img, f"Range: {int(max_range)}m", 
+                   (center_x - 60, disp_size[1] - 20), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 150), 1)
+        
         for detect in radar_data:
             # Calculate point position
             distance = detect.depth
-            # Radar range limited to 50m, scaled to display area
-            scale = min(disp_size) / (2 * float(self.sensor_options.get('range', '50')))
+            # Radar range limited to configuration, scaled to display area
+            scale = min(disp_size) / (2 * max_range)
             
-            # Calculate point coordinates (forward is positive y-axis, right is positive x-axis)
-            x = center_x + int(distance * math.sin(detect.azimuth) * scale)
-            y = center_y - int(distance * math.cos(detect.azimuth) * scale)
+            # Apply orientation offset to adjust the visualization direction
+            adjusted_azimuth = detect.azimuth + orientation_offset
+            
+            # Calculate point coordinates with adjusted orientation
+            # Forward is up, right is right on the display
+            x = center_x + int(distance * math.sin(adjusted_azimuth) * scale)
+            y = center_y - int(distance * math.cos(adjusted_azimuth) * scale)
             
             if 0 <= x < disp_size[0] and 0 <= y < disp_size[1]:
                 # Color based on velocity (faster is redder)
@@ -235,11 +283,21 @@ class SensorManager:
                 else:  # Receding objects
                     color = (min(255, abs(velocity) * 25), int(255 - min(255, abs(velocity) * 10)), 0)  # Green to red
                 
-                # Draw point
-                cv2.circle(radar_img, (x, y), 3, color, -1)
+                # Draw point with size based on velocity
+                point_size = min(5, max(3, int(abs(velocity) / 5) + 2))
+                cv2.circle(radar_img, (x, y), point_size, color, -1)
+                
+                # For significant velocities, draw a line indicating direction and speed
+                if abs(velocity) > 5.0:
+                    line_length = min(15, max(5, int(abs(velocity))))
+                    end_x = x + int(line_length * math.sin(adjusted_azimuth))
+                    end_y = y - int(line_length * math.cos(adjusted_azimuth))
+                    cv2.line(radar_img, (x, y), (end_x, end_y), color, 1)
         
         if self.display_man.render_enabled():
-            self.surface = pygame.surfarray.make_surface(radar_img)
+            # Convert OpenCV image (BGR) to RGB for pygame
+            radar_img_rgb = cv2.cvtColor(radar_img, cv2.COLOR_BGR2RGB)
+            self.surface = pygame.surfarray.make_surface(radar_img_rgb)
             
         t_end = self.timer.time()
         self.time_processing += (t_end-t_start)
@@ -404,41 +462,65 @@ def run_simulation(args, client):
         if args.seed > 0:
             print(f"Spawned ego vehicle at fixed spawn point index: {spawn_point_index}")
 
-        # Display manager - 2x3 grid
-        display_manager = DisplayManager(grid_size=[2, 3], window_size=[args.width, args.height])
+        # Display manager - modified to 3x3 grid to accommodate more sensors
+        display_manager = DisplayManager(grid_size=[3, 4], window_size=[args.width, args.height])
 
-        # Create sensors
+        # Create sensors - First row: Cameras
         # Front camera
         SensorManager(world, display_manager, 'RGBCamera', 
                      carla.Transform(carla.Location(x=2.0, z=2.0), carla.Rotation(yaw=0)), 
-                     vehicle, {}, display_pos=[0, 0], sensor_name="Front Camera")
+                     vehicle, {}, display_pos=[0, 1], sensor_name="Front Camera")
         
         # Left camera
         SensorManager(world, display_manager, 'RGBCamera', 
                      carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=-90)), 
-                     vehicle, {}, display_pos=[0, 1], sensor_name="Left Camera")
+                     vehicle, {}, display_pos=[0, 0], sensor_name="Left Camera")
         
         # Right camera
         SensorManager(world, display_manager, 'RGBCamera', 
                      carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=90)), 
                      vehicle, {}, display_pos=[0, 2], sensor_name="Right Camera")
         
+        # Rear camera
+        SensorManager(world, display_manager, 'RGBCamera', 
+                     carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=180)), 
+                     vehicle, {}, display_pos=[0, 3], sensor_name="Rear Camera")
+        
+        # Second row: Radars
+        # Forward radar
+        SensorManager(world, display_manager, 'Radar', 
+                     carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0)), 
+                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     display_pos=[1, 1], sensor_name="Front Radar")
+        
+        # Left radar
+        SensorManager(world, display_manager, 'Radar', 
+                     carla.Transform(carla.Location(x=0, z=1.0), carla.Rotation(yaw=-90)), 
+                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     display_pos=[1, 0], sensor_name="Left Radar")
+        
+        # Right radar
+        SensorManager(world, display_manager, 'Radar', 
+                     carla.Transform(carla.Location(x=0, z=1.0), carla.Rotation(yaw=90)), 
+                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     display_pos=[1, 2], sensor_name="Right Radar")
+        
+        # Rear radar
+        SensorManager(world, display_manager, 'Radar', 
+                     carla.Transform(carla.Location(x=-2.0, z=1.0), carla.Rotation(yaw=180)), 
+                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
+                     display_pos=[1, 3], sensor_name="Rear Radar")
+
+        
+        # Third row: LiDAR and additional sensors
         # Forward LiDAR
         SensorManager(world, display_manager, 'LiDAR', 
                      carla.Transform(carla.Location(x=0, z=2.4)), 
                      vehicle, {'channels': '32', 'range': '50', 'points_per_second': '100000', 'rotation_frequency': '20'}, 
-                     display_pos=[1, 0], sensor_name="LiDAR")
+                     display_pos=[2, 1], sensor_name="LiDAR")
         
-        # Forward Radar
-        SensorManager(world, display_manager, 'Radar', 
-                     carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0)), 
-                     vehicle, {'horizontal_fov': '60', 'vertical_fov': '10', 'range': '50'}, 
-                     display_pos=[1, 1], sensor_name="Radar")
+
         
-        # Rear camera
-        SensorManager(world, display_manager, 'RGBCamera', 
-                     carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=180)), 
-                     vehicle, {}, display_pos=[1, 2], sensor_name="Rear Camera")
 
         # Simulation loop
         call_exit = False
