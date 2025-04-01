@@ -25,6 +25,172 @@ try:
 except ImportError:
     raise RuntimeError('Cannot import pygame, make sure pygame package is installed')
 
+# 天气预设定义
+WEATHER_PRESETS = {
+    'ClearNoon': {
+        'cloudiness': 0.0,
+        'precipitation': 0.0,
+        'precipitation_deposits': 0.0,
+        'wind_intensity': 0.0,
+        'sun_azimuth_angle': 180.0,
+        'sun_altitude_angle': 50.0,
+        'fog_density': 0.0,
+        'fog_distance': 0.0,
+        'wetness': 0.0
+    },
+    'ClearSunset': {
+        'cloudiness': 0.0,
+        'precipitation': 0.0,
+        'precipitation_deposits': 0.0,
+        'wind_intensity': 0.0,
+        'sun_azimuth_angle': 280.0,
+        'sun_altitude_angle': 5.0,
+        'fog_density': 0.0,
+        'fog_distance': 0.0,
+        'wetness': 0.0
+    },
+    'CloudyNoon': {
+        'cloudiness': 80.0,
+        'precipitation': 0.0,
+        'precipitation_deposits': 0.0,
+        'wind_intensity': 20.0,
+        'sun_azimuth_angle': 180.0,
+        'sun_altitude_angle': 45.0,
+        'fog_density': 0.0,
+        'fog_distance': 0.0,
+        'wetness': 0.0
+    },
+    'WetNoon': {
+        'cloudiness': 30.0,
+        'precipitation': 0.0,
+        'precipitation_deposits': 50.0,
+        'wind_intensity': 20.0,
+        'sun_azimuth_angle': 180.0,
+        'sun_altitude_angle': 45.0,
+        'fog_density': 0.0,
+        'fog_distance': 0.0,
+        'wetness': 100.0
+    },
+    'HardRainNoon': {
+        'cloudiness': 90.0,
+        'precipitation': 80.0,
+        'precipitation_deposits': 90.0,
+        'wind_intensity': 60.0,
+        'sun_azimuth_angle': 180.0,
+        'sun_altitude_angle': 40.0,
+        'fog_density': 5.0,
+        'fog_distance': 10.0,
+        'wetness': 100.0
+    },
+    'SoftFogSunset': {
+        'cloudiness': 50.0,
+        'precipitation': 0.0,
+        'precipitation_deposits': 0.0,
+        'wind_intensity': 15.0,
+        'sun_azimuth_angle': 270.0,
+        'sun_altitude_angle': 5.0,
+        'fog_density': 25.0,
+        'fog_distance': 50.0,
+        'wetness': 20.0
+    },
+    'ClearNight': {
+        'cloudiness': 0.0,
+        'precipitation': 0.0,
+        'precipitation_deposits': 0.0,
+        'wind_intensity': 10.0,
+        'sun_azimuth_angle': 0.0,
+        'sun_altitude_angle': -80.0,
+        'fog_density': 0.0,
+        'fog_distance': 0.0,
+        'wetness': 0.0
+    },
+    'Storm': {
+        'cloudiness': 100.0,
+        'precipitation': 100.0,
+        'precipitation_deposits': 100.0,
+        'wind_intensity': 100.0,
+        'sun_azimuth_angle': 180.0,
+        'sun_altitude_angle': 15.0,
+        'fog_density': 10.0,
+        'fog_distance': 25.0,
+        'wetness': 100.0
+    }
+}
+
+def set_weather_preset(world, preset="default"):
+    """Set weather based on predefined presets"""
+    weather = world.get_weather()
+    
+    # 根据预设名称设置不同的天气条件
+    if preset == "default":
+        # 晴朗的白天
+        weather.sun_altitude_angle = 85.0  # 太阳高度角（正午）
+        weather.cloudiness = 10.0  # 云量 (0-100)
+        weather.precipitation = 0.0  # 降水量 (0-100)
+        weather.precipitation_deposits = 0.0  # 地面积水 (0-100)
+        weather.wind_intensity = 10.0  # 风强度 (0-100)
+        weather.fog_density = 0.0  # 雾密度 (0-100)
+        weather.fog_distance = 0.0  # 雾可见距离
+        weather.wetness = 0.0  # 湿度 (0-100)
+        weather.sun_azimuth_angle = 45.0  # 太阳方位角
+        weather.fog_falloff = 0.0  # 雾衰减
+    
+    elif preset == "badweather":
+        # 恶劣天气 - 强降雨和大风
+        weather.sun_altitude_angle = 45.0  # 较低的太阳角度
+        weather.cloudiness = 90.0  # 高云量
+        weather.precipitation = 80.0  # 大雨
+        weather.precipitation_deposits = 60.0  # 积水
+        weather.wind_intensity = 70.0  # 大风
+        weather.fog_density = 40.0  # 轻雾
+        weather.fog_distance = 40.0  
+        weather.wetness = 80.0  # 很湿
+        weather.sun_azimuth_angle = 45.0  
+        weather.fog_falloff = 1.0  
+    
+    elif preset == "night":
+        # 晴朗的夜晚
+        weather.sun_altitude_angle = -80.0  # 太阳在地平线以下（夜晚）
+        weather.cloudiness = 10.0  # 少云
+        weather.precipitation = 0.0  # 无雨
+        weather.precipitation_deposits = 0.0  # 无积水
+        weather.wind_intensity = 10.0  # 微风
+        weather.fog_density = 0.0  # 无雾
+        weather.fog_distance = 0.0  
+        weather.wetness = 0.0  # 干燥
+        weather.sun_azimuth_angle = 225.0  # 太阳方位角（夜晚）
+        weather.fog_falloff = 0.0  
+    
+    elif preset == "badweather_night":
+        # 恶劣天气的夜晚 - 雨夜
+        weather.sun_altitude_angle = -80.0  # 夜晚
+        weather.cloudiness = 90.0  # 多云
+        weather.precipitation = 80.0  # 大雨
+        weather.precipitation_deposits = 60.0  # 积水
+        weather.wind_intensity = 70.0  # 大风
+        weather.fog_density = 50.0  # 大雾
+        weather.fog_distance = 25.0  # 雾气浓重，可见度低
+        weather.wetness = 80.0  # 很湿
+        weather.sun_azimuth_angle = 225.0  
+        weather.fog_falloff = 1.0  
+    
+    else:
+        print(f"未知的天气预设: {preset}，使用默认晴天")
+        # 使用默认晴天设置
+        weather.sun_altitude_angle = 85.0
+        weather.cloudiness = 10.0
+        weather.precipitation = 0.0
+        weather.precipitation_deposits = 0.0
+        weather.wind_intensity = 10.0
+        weather.fog_density = 0.0
+        weather.fog_distance = 0.0
+        weather.wetness = 0.0
+    
+    world.set_weather(weather)
+    print(f"已设置天气为: {preset}")
+    
+    return weather
+    
 class CustomTimer:
     def __init__(self):
         try:
@@ -108,6 +274,9 @@ class SensorManager:
             disp_size = self.display_man.get_display_size()
             camera_bp.set_attribute('image_size_x', str(disp_size[0]))
             camera_bp.set_attribute('image_size_y', str(disp_size[1]))
+            
+            # 设置相机刷新率为10 FPS (0.1秒间隔)
+            camera_bp.set_attribute('sensor_tick', '0.1')
 
             for key in sensor_options:
                 camera_bp.set_attribute(key, sensor_options[key])
@@ -122,6 +291,9 @@ class SensorManager:
             lidar_bp.set_attribute('dropoff_general_rate', lidar_bp.get_attribute('dropoff_general_rate').recommended_values[0])
             lidar_bp.set_attribute('dropoff_intensity_limit', lidar_bp.get_attribute('dropoff_intensity_limit').recommended_values[0])
             lidar_bp.set_attribute('dropoff_zero_intensity', lidar_bp.get_attribute('dropoff_zero_intensity').recommended_values[0])
+            
+            # 设置LiDAR刷新率为10 FPS
+            lidar_bp.set_attribute('sensor_tick', '0.1')
 
             for key in sensor_options:
                 lidar_bp.set_attribute(key, sensor_options[key])
@@ -137,6 +309,9 @@ class SensorManager:
             # Set default radar parameters
             radar_bp.set_attribute('horizontal_fov', '30')
             radar_bp.set_attribute('vertical_fov', '10')
+            
+            # 设置雷达刷新率为10 FPS
+            radar_bp.set_attribute('sensor_tick', '0.1')
             
             for key in sensor_options:
                 radar_bp.set_attribute(key, sensor_options[key])
@@ -480,80 +655,6 @@ def clean_up_all_vehicles(world):
         print("No existing vehicles to remove")
     
     return len(vehicle_list)
-
-def set_weather_preset(world, preset="default"):
-    """Set weather based on predefined presets"""
-    weather = world.get_weather()
-    
-    # 根据预设名称设置不同的天气条件
-    if preset == "default":
-        # 晴朗的白天
-        weather.sun_altitude_angle = 85.0  # 太阳高度角（正午）
-        weather.cloudiness = 10.0  # 云量 (0-100)
-        weather.precipitation = 0.0  # 降水量 (0-100)
-        weather.precipitation_deposits = 0.0  # 地面积水 (0-100)
-        weather.wind_intensity = 10.0  # 风强度 (0-100)
-        weather.fog_density = 0.0  # 雾密度 (0-100)
-        weather.fog_distance = 0.0  # 雾可见距离
-        weather.wetness = 0.0  # 湿度 (0-100)
-        weather.sun_azimuth_angle = 45.0  # 太阳方位角
-        weather.fog_falloff = 0.0  # 雾衰减
-    
-    elif preset == "badweather":
-        # 恶劣天气 - 强降雨和大风
-        weather.sun_altitude_angle = 45.0  # 较低的太阳角度
-        weather.cloudiness = 90.0  # 高云量
-        weather.precipitation = 80.0  # 大雨
-        weather.precipitation_deposits = 60.0  # 积水
-        weather.wind_intensity = 70.0  # 大风
-        weather.fog_density = 40.0  # 轻雾
-        weather.fog_distance = 40.0  
-        weather.wetness = 80.0  # 很湿
-        weather.sun_azimuth_angle = 45.0  
-        weather.fog_falloff = 1.0  
-    
-    elif preset == "night":
-        # 晴朗的夜晚
-        weather.sun_altitude_angle = -80.0  # 太阳在地平线以下（夜晚）
-        weather.cloudiness = 10.0  # 少云
-        weather.precipitation = 0.0  # 无雨
-        weather.precipitation_deposits = 0.0  # 无积水
-        weather.wind_intensity = 10.0  # 微风
-        weather.fog_density = 0.0  # 无雾
-        weather.fog_distance = 0.0  
-        weather.wetness = 0.0  # 干燥
-        weather.sun_azimuth_angle = 225.0  # 太阳方位角（夜晚）
-        weather.fog_falloff = 0.0  
-    
-    elif preset == "badweather_night":
-        # 恶劣天气的夜晚 - 雨夜
-        weather.sun_altitude_angle = -80.0  # 夜晚
-        weather.cloudiness = 90.0  # 多云
-        weather.precipitation = 80.0  # 大雨
-        weather.precipitation_deposits = 60.0  # 积水
-        weather.wind_intensity = 70.0  # 大风
-        weather.fog_density = 50.0  # 大雾
-        weather.fog_distance = 25.0  # 雾气浓重，可见度低
-        weather.wetness = 80.0  # 很湿
-        weather.sun_azimuth_angle = 225.0  
-        weather.fog_falloff = 1.0  
-    
-    else:
-        print(f"未知的天气预设: {preset}，使用默认晴天")
-        # 使用默认晴天设置
-        weather.sun_altitude_angle = 85.0
-        weather.cloudiness = 10.0
-        weather.precipitation = 0.0
-        weather.precipitation_deposits = 0.0
-        weather.wind_intensity = 10.0
-        weather.fog_density = 0.0
-        weather.fog_distance = 0.0
-        weather.wetness = 0.0
-    
-    world.set_weather(weather)
-    print(f"已设置天气为: {preset}")
-    
-    return weather
 
 def initialize_world(client, args):
     """初始化模拟世界，设置环境和车辆"""

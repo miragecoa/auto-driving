@@ -288,10 +288,14 @@ class YOLOSensorManager(SensorManager):
                         try:
                             # 尝试不同的模型输出格式
                             output = self.model(img)
+                            
+                            # 根据输出类型的不同进行处理
                             if isinstance(output, list):
                                 pred = output[0]  # 取第一个输出
                             elif isinstance(output, dict):
                                 pred = output['out']  # 一些模型可能使用字典输出
+                            elif isinstance(output, tuple):
+                                pred = output[0]  # 通常第一个元素包含检测结果
                             elif isinstance(output, torch.Tensor):
                                 pred = output
                             else:
