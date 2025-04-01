@@ -13,5 +13,6 @@ python train_vehicle_detector.py --data_path vehicle_dataset --epochs 100 --batc
 // 调用脚本训练模型
 python C:\project\auto-driving\yolov5\train.py --save-period 100 --data=vehicle_dataset\dataset.yaml --epochs=10000 --batch-size=16 --img=640 --weights=yolov5s.pt --project=runs/train --name=vehicle_detection
 //
-python preview_predictions.py --weights ./best.pt
+python preview_predictions.py --weights ./last.pt
+python preview_predictions.py --weights ./last.pt --debug_level 2
 

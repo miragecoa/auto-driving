@@ -18,7 +18,7 @@ def parse_arguments():
                         help='数据集路径')
     parser.add_argument('--img_size', type=int, default=640, 
                         help='输入图像尺寸')
-    parser.add_argument('--conf_thres', type=float, default=0.25, 
+    parser.add_argument('--conf_thres', type=float, default=0.7, 
                         help='置信度阈值')
     parser.add_argument('--iou_thres', type=float, default=0.45, 
                         help='NMS IOU阈值')
@@ -30,6 +30,12 @@ def parse_arguments():
                         help='最多预览多少张图片')
     parser.add_argument('--use_native', action='store_true',
                         help='使用YOLOv5原生推理方法')
+    parser.add_argument('--debug_level', type=int, default=1, choices=[0, 1, 2],
+                        help='调试信息级别: 0=无, 1=基本信息, 2=详细信息')
+    parser.add_argument('--log_file', type=str, default='',
+                        help='保存调试日志的文件路径，为空则不保存')
+    parser.add_argument('--bbox_scale', type=float, default=1.0,
+                        help='边界框缩放因子, <1.0缩小框, >1.0放大框')
     
     return parser.parse_args()
 
@@ -141,11 +147,36 @@ def select_device(device=''):
             
         return torch.device(device)
 
-def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device, output_dir, max_images):
+def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device, output_dir, max_images, debug_level=1, log_file=None, bbox_scale=1.0):
     """生成预览图"""
+    
+    # 设置日志文件
+    log_fh = None
+    if log_file:
+        try:
+            log_dir = os.path.dirname(log_file)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            log_fh = open(log_file, 'w', encoding='utf-8')
+            print(f"调试日志将保存到: {log_file}")
+        except Exception as e:
+            print(f"打开日志文件出错: {e}")
+    
+    def log_print(*args, **kwargs):
+        """同时打印到控制台和日志文件"""
+        print(*args, **kwargs)
+        if log_fh:
+            # 将打印内容写入日志文件
+            print(*args, **kwargs, file=log_fh)
+    
+    # 确保置信度阈值设置正确
+    log_print(f"设置置信度阈值为: {conf_thres} (只显示置信度 > {conf_thres} 的检测结果)")
+
     # 设置设备
     device = select_device(device)
     half = device.type != 'cpu'  # 半精度
+    
+    log_print(f"使用设备: {device}, 半精度: {half}")
     
     # 设置模型
     if model is not None:
@@ -155,13 +186,18 @@ def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device,
         model.eval()  # 设置为评估模式
         try:
             stride = int(model.stride.max())  # 模型步长
+            log_print(f"模型步长: {stride}")
         except:
             try:
                 stride = max(int(model.stride), 32) if hasattr(model, 'stride') else 32
+                log_print(f"未能获取模型步长，使用默认值: {stride}")
             except:
                 stride = 32
+                log_print(f"使用固定步长: {stride}")
     else:
-        print("错误: 模型加载失败")
+        log_print("错误: 模型加载失败")
+        if log_fh:
+            log_fh.close()
         return
     
     # 导入必要的YOLOv5模块
@@ -185,19 +221,55 @@ def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device,
             
             def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
                 """缩放边界框坐标"""
+                if debug_level >= 2:
+                    log_print(f"调用scale_coords: img1_shape={img1_shape}, img0_shape={img0_shape}")
+                    
                 if ratio_pad is None:  # 从img0_shape计算
                     gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain = old / new
                     pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+                    if debug_level >= 2:
+                        log_print(f"  计算的gain={gain}, pad={pad}")
                 else:
                     gain = ratio_pad[0][0]
                     pad = ratio_pad[1]
+                    if debug_level >= 2:
+                        log_print(f"  提供的gain={gain}, pad={pad}")
 
-                coords[:, [0, 2]] -= pad[0]  # x padding
-                coords[:, [1, 3]] -= pad[1]  # y padding
-                coords[:, :4] /= gain
-                coords[:, [0, 2]] = coords[:, [0, 2]].clamp(0, img0_shape[1])  # x1, x2
-                coords[:, [1, 3]] = coords[:, [1, 3]].clamp(0, img0_shape[0])  # y1, y2
-                return coords
+                # 复制坐标以避免修改原始数据
+                coords_copy = coords.clone() if isinstance(coords, torch.Tensor) else coords.copy()
+                
+                # 调试原始坐标
+                if debug_level >= 2:
+                    if len(coords) > 0:
+                        log_print(f"  原始坐标示例: {coords[0]}")
+                
+                # 去除填充
+                coords_copy[:, [0, 2]] -= pad[0]  # x padding
+                coords_copy[:, [1, 3]] -= pad[1]  # y padding
+                
+                # 调试去除填充后的坐标
+                if debug_level >= 2:
+                    if len(coords) > 0:
+                        log_print(f"  去除填充后坐标示例: {coords_copy[0]}")
+                
+                # 根据缩放比例调整坐标
+                coords_copy[:, :4] /= gain
+                
+                # 调试缩放后的坐标
+                if debug_level >= 2:
+                    if len(coords) > 0:
+                        log_print(f"  缩放后坐标示例: {coords_copy[0]}")
+                
+                # 限制在边界内
+                coords_copy[:, [0, 2]] = coords_copy[:, [0, 2]].clamp(0, img0_shape[1])  # x1, x2
+                coords_copy[:, [1, 3]] = coords_copy[:, [1, 3]].clamp(0, img0_shape[0])  # y1, y2
+                
+                # 调试最终坐标
+                if debug_level >= 2:
+                    if len(coords) > 0:
+                        log_print(f"  最终坐标示例: {coords_copy[0]}")
+                
+                return coords_copy
             
             def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False, max_det=300):
                 """简易版非极大值抑制"""
@@ -226,9 +298,20 @@ def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device,
                     x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
                     
                     # 获取最高置信度的类别
-                    box = x[:, :4]
+                    # 原始坐标格式是 [中心x, 中心y, 宽度, 高度]
+                    # 先把格式转为 [x1, y1, x2, y2]
+                    box = x[:, :4].clone()
+                    
+                    # 将 [中心x, 中心y, 宽度, 高度] 转为 [x1, y1, x2, y2]
+                    box_converted = torch.zeros_like(box)
+                    box_converted[:, 0] = box[:, 0] - box[:, 2] / 2  # x1 = cx - w/2
+                    box_converted[:, 1] = box[:, 1] - box[:, 3] / 2  # y1 = cy - h/2
+                    box_converted[:, 2] = box[:, 0] + box[:, 2] / 2  # x2 = cx + w/2
+                    box_converted[:, 3] = box[:, 1] + box[:, 3] / 2  # y2 = cy + h/2
+                    
+                    # 使用转换后的坐标
                     conf, j = x[:, 5:].max(1, keepdim=True)
-                    x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
+                    x = torch.cat((box_converted, conf, j.float()), 1)[conf.view(-1) > conf_thres]
                     
                     # 过滤
                     if classes is not None:
@@ -290,29 +373,49 @@ def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device,
         names = model.module.names if hasattr(model, 'module') else model.names
         # 检查是否只有一个类别 - 这是我们期望的
         if len(names) == 1 and names[0].lower() == 'vehicle':
-            print(f"模型只包含预期的单一类别: {names}")
+            log_print(f"模型只包含预期的单一类别: {names}")
         else:
             # 如果模型包含多个类别，我们强制只使用'vehicle'
-            print(f"警告: 模型包含多个类别 {names}，将强制使用'vehicle'标签")
+            log_print(f"警告: 模型包含多个类别 {names}，将强制使用'vehicle'标签")
+            # 打印所有类别ID和名称的映射
+            if debug_level >= 1:
+                log_print("类别ID映射:")
+                for i, name in enumerate(names):
+                    log_print(f"  ID {i}: {name}")
             names = ['vehicle']  # 强制设置为单一vehicle类别
     except:
         # 如果无法获取模型名称，使用默认值
         names = ['vehicle']
-        print(f"无法获取类别名称，使用默认值: {names}")
+        log_print(f"无法获取类别名称，使用默认值: {names}")
     
     colors = [[np.random.randint(0, 255) for _ in range(3)] for _ in range(1)]  # 只为vehicle类别创建一个颜色
+    
+    if bbox_scale != 1.0:
+        log_print(f"应用边界框缩放因子: {bbox_scale} (将对所有检测框进行缩放)")
     
     for img_path in tqdm(img_files, desc="正在生成预览"):
         # 读取图像
         img0 = cv2.imread(img_path)  # 原始图像
         if img0 is None:
-            print(f"无法读取图像: {img_path}")
+            log_print(f"无法读取图像: {img_path}")
             continue
         
+        # 记录原始图像尺寸
+        original_shape = img0.shape
+        if debug_level >= 1:
+            log_print(f"图像 {os.path.basename(img_path)} 原始尺寸: {original_shape}")
+        
         # 转换图像
-        img = letterbox(img0, img_size, stride=stride)[0]
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
+        try:
+            letterboxed_img, ratio, pad = letterbox(img0, img_size, stride=stride)
+            if debug_level >= 2:
+                log_print(f"  调整后尺寸: {letterboxed_img.shape}, 缩放比例: {ratio}, 填充: {pad}")
+            
+            img = letterboxed_img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            img = np.ascontiguousarray(img)
+        except Exception as e:
+            log_print(f"图像预处理错误: {e}")
+            continue
         
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -324,15 +427,49 @@ def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device,
         with torch.no_grad():
             try:
                 pred = model(img)[0]
+                # 打印原始预测结果的形状
+                if debug_level >= 2:
+                    log_print(f"\n图像 {os.path.basename(img_path)} 原始预测形状: {pred.shape}")
+                    # 如果预测维度 > 5，说明模型预测了多个类别
+                    if pred.shape[-1] > 6:
+                        log_print(f"  注意: 模型预测了 {pred.shape[-1] - 5} 个类别")
             except Exception as e:
-                print(f"模型推理错误: {e}")
+                log_print(f"模型推理错误: {e}")
                 pred = torch.zeros((1, 0, 6), device=device)
         
         # 非极大值抑制
         try:
-            pred = non_max_suppression(pred, conf_thres, iou_thres)
+            # 尝试只检测ID为0的类别（vehicle）
+            vehicle_classes = [0]  # 车辆类别ID
+            
+            # 检查NMS前的预测格式
+            if debug_level >= 2 and len(pred[0]) > 0:
+                log_print(f"NMS前的预测格式示例: {pred[0][0]}")
+                
+            # 非极大值抑制
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes=vehicle_classes)
+            
+            # 检查NMS后的预测格式 
+            if debug_level >= 2 and len(pred[0]) > 0:
+                log_print(f"NMS后的预测格式示例: {pred[0][0]}")
+                
+            if debug_level >= 1:
+                log_print(f"  NMS后检测到 {len(pred[0])} 个物体")
+                
+            # 额外确保所有检测结果均满足置信度要求
+            for i in range(len(pred)):
+                if len(pred[i]) > 0:
+                    # 获取原始检测数量
+                    orig_count = len(pred[i])
+                    # 仅保留置信度大于等于阈值的检测结果
+                    high_conf_detections = pred[i][pred[i][:, 4] >= conf_thres]
+                    pred[i] = high_conf_detections
+                    # 如果有被过滤的结果，显示日志
+                    if debug_level >= 1 and len(high_conf_detections) < orig_count:
+                        log_print(f"  应用置信度过滤: {orig_count} -> {len(high_conf_detections)} 个物体 (要求置信度 >= {conf_thres})")
+                
         except Exception as e:
-            print(f"非极大值抑制错误: {e}")
+            log_print(f"非极大值抑制错误: {e}")
             pred = [torch.zeros((0, 6), device=device)]
         
         # 处理检测结果
@@ -344,35 +481,145 @@ def generate_previews(model, data_path, img_size, conf_thres, iou_thres, device,
             cv2.putText(im0, f"File: {base_filename}", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
+            # 添加置信度阈值信息
+            cv2.putText(im0, f"Confidence threshold: {conf_thres}", (10, 60), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 255), 2)
+            
+            # 添加边界框缩放信息
+            if bbox_scale != 1.0:
+                cv2.putText(im0, f"Bounding box scale: {bbox_scale:.2f}", (10, 85), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 255), 2)
+                y_offset = 110  # 调整下一行文本的垂直位置
+            else:
+                y_offset = 90  # 保持原来的垂直位置
+
             # 添加检测数量信息
             if len(det):
                 # 重新缩放框到原始图像大小
                 try:
+                    # 保存原始检测结果以便调试
+                    if debug_level >= 2:
+                        log_print("原始检测结果（缩放前）:")
+                        for j, (*xyxy, conf, cls) in enumerate(det):
+                            # 注意：检查xyxy格式，确认是否需要转换
+                            if len(xyxy) == 4:
+                                x1, y1, x2, y2 = float(xyxy[0]), float(xyxy[1]), float(xyxy[2]), float(xyxy[3])
+                                
+                                # 检查是否为中心点+宽高格式 (如果x2比x1小或y2比y1小，可能是宽高而不是坐标)
+                                if x2 < x1 or y2 < y1:
+                                    log_print(f"  物体 {j+1} 检测到中心点+宽高格式: [{float(xyxy[0])},{float(xyxy[1])},{float(xyxy[2])},{float(xyxy[3])}]")
+                                    
+                                    # 转换为角点坐标 (x1,y1,x2,y2)
+                                    cx, cy, w, h = float(xyxy[0]), float(xyxy[1]), float(xyxy[2]), float(xyxy[3])
+                                    x1, y1 = cx - w/2, cy - h/2
+                                    x2, y2 = cx + w/2, cy + h/2
+                                    det[j, 0] = x1
+                                    det[j, 1] = y1
+                                    det[j, 2] = x2
+                                    det[j, 3] = y2
+                                    
+                                    log_print(f"  物体 {j+1} 转换后坐标: [{x1},{y1},{x2},{y2}]")
+                                else:
+                                    log_print(f"  物体 {j+1} 原始坐标: [{float(xyxy[0])},{float(xyxy[1])},{float(xyxy[2])},{float(xyxy[3])}]")
+                            else:
+                                log_print(f"  物体 {j+1} 原始坐标: {xyxy}")
+                    
+                    # 缩放坐标到原始图像大小
                     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+                    
+                    # 打印缩放后的结果以便调试
+                    if debug_level >= 2:
+                        log_print("缩放后检测结果:")
+                        for j, (*xyxy, conf, cls) in enumerate(det):
+                            log_print(f"  物体 {j+1} 缩放后坐标: [{float(xyxy[0])},{float(xyxy[1])},{float(xyxy[2])},{float(xyxy[3])}]")
+                    
                 except Exception as e:
-                    print(f"坐标缩放错误: {e}")
+                    log_print(f"坐标缩放错误: {e}")
+                    log_print(f"错误详情: {str(e)}")
+                    import traceback
+                    log_print(traceback.format_exc())
                 
                 # 绘制结果
                 try:
-                    for *xyxy, conf, cls in reversed(det):
+                    if debug_level >= 1:
+                        log_print(f"\n检测结果详情 ({len(det)} 个物体):")
+                    
+                    # 检测框的面积和尺寸信息
+                    bbox_areas = []
+                    for *xyxy, conf, cls in det:
+                        # 确保坐标顺序正确 (x1,y1,x2,y2)，x1<x2, y1<y2
+                        x1, y1, x2, y2 = float(xyxy[0]), float(xyxy[1]), float(xyxy[2]), float(xyxy[3])
+                        
+                        # 应用边界框缩放
+                        if bbox_scale != 1.0:
+                            # 计算中心点
+                            cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+                            # 计算宽高
+                            w, h = x2 - x1, y2 - y1
+                            # 应用缩放
+                            w *= bbox_scale
+                            h *= bbox_scale
+                            # 重新计算坐标
+                            x1, y1 = cx - w/2, cy - h/2
+                            x2, y2 = cx + w/2, cy + h/2
+                            # 确保不超出图像边界
+                            x1 = max(0, x1)
+                            y1 = max(0, y1)
+                            x2 = min(im0.shape[1], x2)
+                            y2 = min(im0.shape[0], y2)
+                        
+                        # 如果坐标顺序不正确，则交换
+                        if x1 > x2:
+                            x1, x2 = x2, x1
+                        if y1 > y2:
+                            y1, y2 = y2, y1
+                        
+                        # 重新计算宽度和高度
+                        width = x2 - x1
+                        height = y2 - y1
+                        area = width * height
+                        
+                        # 使用正确顺序的坐标
+                        xyxy = [x1, y1, x2, y2]
+                        bbox_areas.append((xyxy, conf, cls, area, width, height))
+                    
+                    # 按面积排序
+                    bbox_areas.sort(key=lambda x: x[3], reverse=True)
+                    
+                    for i, (xyxy, conf, cls, area, width, height) in enumerate(bbox_areas):
+                        # 打印边界框详情
+                        if debug_level >= 1:
+                            cls_id = int(cls.item()) if hasattr(cls, 'item') else int(cls)
+                            # 尝试获取原始类别名称
+                            try:
+                                original_names = model.module.names if hasattr(model, 'module') else model.names
+                                original_class_name = original_names[cls_id] if cls_id < len(original_names) else f"未知类别{cls_id}"
+                                log_print(f"  物体 {i+1}: 类别ID={cls_id}, 类别名称={original_class_name}, 置信度={conf:.4f}, 坐标=[{int(xyxy[0])},{int(xyxy[1])},{int(xyxy[2])},{int(xyxy[3])}], 尺寸=[{int(width)}x{int(height)}], 面积={int(area)}px²")
+                            except:
+                                log_print(f"  物体 {i+1}: 类别ID={cls_id}, 置信度={conf:.4f}, 坐标=[{int(xyxy[0])},{int(xyxy[1])},{int(xyxy[2])},{int(xyxy[3])}], 尺寸=[{int(width)}x{int(height)}], 面积={int(area)}px²")
+                        
                         # 忽略类别信息，始终使用'vehicle'标签
                         label = f'vehicle {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[0], line_thickness=3)
                 except Exception as e:
-                    print(f"绘制边界框错误: {e}")
+                    log_print(f"绘制边界框错误: {e}")
                 
                 # 添加检测计数
-                cv2.putText(im0, f"Vehicles: {len(det)}", (10, 70), 
+                cv2.putText(im0, f"Vehicles: {len(det)}", (10, y_offset), 
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             else:
-                cv2.putText(im0, "No vehicles detected", (10, 70), 
+                cv2.putText(im0, "No vehicles detected", (10, y_offset), 
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             # 保存预览图
             output_filename = os.path.join(output_dir, f"preview_{base_filename}")
             cv2.imwrite(output_filename, im0)
             
-    print(f"预览图像已保存到: {output_dir}")
+    log_print(f"预览图像已保存到: {output_dir}")
+    
+    # 关闭日志文件
+    if log_fh:
+        log_fh.close()
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
     """从YOLOv5代码中提取的letterbox函数"""
@@ -427,13 +674,16 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
         img_resized = cv2.resize(img, (new_shape[1], new_shape[0]), interpolation=cv2.INTER_LINEAR)
         return img_resized, (1.0, 1.0), (0.0, 0.0)
 
-def try_native_yolov5_prediction(weights, data_path, img_size, conf_thres, iou_thres, device, output_dir, max_images):
+def try_native_yolov5_prediction(weights, data_path, img_size, conf_thres, iou_thres, device, output_dir, max_images, bbox_scale=1.0):
     """尝试使用YOLOv5原生方法进行预测"""
     try:
         import subprocess
         import shutil
         
         print("尝试使用YOLOv5原生方法进行预测...")
+        print(f"设置置信度阈值为: {conf_thres} (只显示置信度 > {conf_thres} 的检测结果)")
+        if bbox_scale != 1.0:
+            print(f"注意: 使用原生YOLOv5推理时不支持边界框缩放 {bbox_scale}，此参数将被忽略")
         
         # 检查YOLOv5目录
         yolov5_dir = os.path.join(os.getcwd(), 'yolov5')
@@ -529,6 +779,17 @@ def main():
     print("=== 车辆检测模型预览 ===")
     print(f"模型权重: {args.weights}")
     print(f"数据集路径: {args.data_path}")
+    print(f"调试级别: {args.debug_level}")
+    if args.log_file:
+        print(f"调试日志: {args.log_file}")
+    if args.bbox_scale != 1.0:
+        print(f"边界框缩放: {args.bbox_scale}")
+    
+    # 更新README文件中的说明
+    try:
+        update_readme_for_debug_level()
+    except Exception as e:
+        print(f"更新README时出错: {e}")
     
     # 检查YOLOv5是否存在
     if not check_yolov5_exists():
@@ -544,7 +805,8 @@ def main():
             args.iou_thres,
             args.device,
             args.output_dir,
-            args.max_images
+            args.max_images,
+            args.bbox_scale
         )
         if success:
             print(f"成功使用YOLOv5原生方法生成预测结果到: {args.output_dir}")
@@ -571,10 +833,96 @@ def main():
             args.iou_thres, 
             args.device,
             args.output_dir,
-            args.max_images
+            args.max_images,
+            args.debug_level,
+            args.log_file,
+            args.bbox_scale
         )
     else:
         print("模型加载失败,请检查权重路径或YOLOv5安装")
+
+def update_readme_for_debug_level():
+    """更新README_preview.md文件，添加debug_level参数的说明"""
+    readme_path = "README_preview.md"
+    if not os.path.exists(readme_path):
+        print(f"README文件不存在: {readme_path}")
+        return
+    
+    with open(readme_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # 检查是否已经有必要的参数说明
+    new_params = ["--debug_level", "--log_file", "--bbox_scale"]
+    missing_params = [param for param in new_params if param not in content]
+    
+    if not missing_params:
+        print("README中已有所有必要的参数说明")
+        return
+    
+    # 在参数说明部分添加缺失的参数
+    params_section = "## 参数说明"
+    
+    if params_section in content:
+        updated_content = content
+        
+        if "--debug_level" not in content:
+            updated_content = updated_content.replace(
+                "- `--use_native`: 使用YOLOv5原生推理方法（推荐用于新版本YOLOv5）",
+                "- `--use_native`: 使用YOLOv5原生推理方法（推荐用于新版本YOLOv5）\n- `--debug_level`: 调试信息级别 (0=无, 1=基本信息, 2=详细信息), 默认为1"
+            )
+        
+        if "--log_file" not in updated_content:
+            updated_content = updated_content.replace(
+                "- `--debug_level`: 调试信息级别 (0=无, 1=基本信息, 2=详细信息), 默认为1",
+                "- `--debug_level`: 调试信息级别 (0=无, 1=基本信息, 2=详细信息), 默认为1\n- `--log_file`: 保存调试日志的文件路径，为空则不保存"
+            )
+        
+        if "--bbox_scale" not in updated_content:
+            # 尝试在log_file参数后添加
+            if "--log_file" in updated_content:
+                updated_content = updated_content.replace(
+                    "- `--log_file`: 保存调试日志的文件路径，为空则不保存",
+                    "- `--log_file`: 保存调试日志的文件路径，为空则不保存\n- `--bbox_scale`: 边界框缩放因子 (<1.0缩小框, >1.0放大框), 默认为1.0"
+                )
+            # 如果没有log_file参数，则在debug_level参数后添加
+            elif "--debug_level" in updated_content:
+                updated_content = updated_content.replace(
+                    "- `--debug_level`: 调试信息级别 (0=无, 1=基本信息, 2=详细信息), 默认为1",
+                    "- `--debug_level`: 调试信息级别 (0=无, 1=基本信息, 2=详细信息), 默认为1\n- `--bbox_scale`: 边界框缩放因子 (<1.0缩小框, >1.0放大框), 默认为1.0"
+                )
+            # 如果其他位置都找不到，则在最后一个已知参数后添加
+            else:
+                updated_content = updated_content.replace(
+                    "- `--max_images`: 最多预览的图片数量，默认为10",
+                    "- `--max_images`: 最多预览的图片数量，默认为10\n- `--bbox_scale`: 边界框缩放因子 (<1.0缩小框, >1.0放大框), 默认为1.0"
+                )
+        
+        # 添加调试示例
+        examples_section = "## 示例"
+        new_examples = []
+        
+        if "--debug_level" in missing_params:
+            new_examples.append("\n5. 使用详细调试信息:\n   ```bash\n   python preview_predictions.py --weights runs/train/vehicle_detection/weights/best.pt --debug_level 2\n   ```")
+        
+        if "--log_file" in missing_params:
+            new_examples.append("\n6. 保存调试日志到文件:\n   ```bash\n   python preview_predictions.py --weights runs/train/vehicle_detection/weights/best.pt --debug_level 2 --log_file debug_log.txt\n   ```")
+        
+        if "--bbox_scale" in missing_params:
+            new_examples.append("\n7. 缩小边界框(解决框太大问题):\n   ```bash\n   python preview_predictions.py --weights runs/train/vehicle_detection/weights/best.pt --bbox_scale 0.5\n   ```")
+        
+        if new_examples and examples_section in updated_content:
+            examples_text = "".join(new_examples)
+            updated_content = updated_content.replace(
+                "## 输出结果",
+                f"{examples_text}\n\n## 输出结果"
+            )
+        
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(updated_content)
+        
+        print(f"已更新 {readme_path} 添加参数说明")
+    else:
+        print(f"无法在 {readme_path} 中找到参数说明部分")
 
 if __name__ == "__main__":
     main() 
