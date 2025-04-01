@@ -393,17 +393,43 @@ class CarlaDatasetGenerator:
         
         print(f"成功初始化场景: 已生成 {len(vehicles_list)} 辆动态NPC车辆，主车ID: {self.vehicle.id}")
 
-    def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50):
+    def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50, skip_empty_frames=False):
         """生成数据集"""
         print(f"开始生成数据集：目标帧数 {num_frames}，采集间隔 {capture_interval} 秒")
         print(f"图像尺寸: {self.image_w}x{self.image_h}，检测范围: {detection_range}米")
         print(f"显示3D边界框: {'是' if show_3d_bbox else '否'}")
         print("已启用边界框重叠过滤: 当一个边界框完全包含另一个时，只保留较大的边界框")
         
+        if skip_empty_frames:
+            print("已启用空帧过滤: 只保存包含车辆标记的帧")
+        else:
+            print("未启用空帧过滤: 所有捕获的帧都将被保存")
+        
         # 确保输出目录已创建
         os.makedirs(self.images_dir, exist_ok=True)
         os.makedirs(self.annotations_dir, exist_ok=True)
         os.makedirs(self.preview_dir, exist_ok=True)
+        
+        # 检查已存在的图像文件，确定起始的image_count
+        existing_images = [f for f in os.listdir(self.images_dir) if f.endswith('.png') or f.endswith('.jpg')]
+        if existing_images:
+            # 提取文件名中的数字部分，找出最大值
+            max_id = -1
+            for img_name in existing_images:
+                try:
+                    # 尝试从文件名中提取数字ID
+                    id_str = os.path.splitext(img_name)[0]  # 去除扩展名
+                    img_id = int(id_str)
+                    max_id = max(max_id, img_id)
+                except ValueError:
+                    # 如果文件名不是纯数字，则忽略
+                    continue
+            
+            # 确保image_count大于已存在的最大ID
+            if max_id >= 0:
+                self.image_count = max_id + 1
+                print(f"根据已存在的图像文件，起始图像ID设置为: {self.image_count}")
+                print(f"这将防止覆盖现有的图像和标注文件")
         
         # 获取投影矩阵
         K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
@@ -411,6 +437,7 @@ class CarlaDatasetGenerator:
         
         last_capture_time = time.time()
         frames_processed = 0
+        frames_skipped = 0  # 新增：记录因无车辆而跳过的帧数
         start_time = time.time()
         
         while frames_processed < num_frames:
@@ -491,7 +518,6 @@ class CarlaDatasetGenerator:
                 
                 # 过滤掉被完全包含的边界框
                 filtered_bboxes = self.filter_contained_bboxes(bboxes_to_render)
-                print(f"原始检测边界框: {len(bboxes_to_render)}, 过滤后边界框: {len(filtered_bboxes)}")
                 
                 # 只绘制过滤后的边界框
                 for bbox_info in filtered_bboxes:
@@ -516,13 +542,33 @@ class CarlaDatasetGenerator:
                 current_time = time.time()
                 if current_time - last_capture_time >= capture_interval:
                     try:
-                        # 保存图像
+                        # 首先检查是否检测到了车辆，如果启用了空帧过滤，则跳过无车辆帧
+                        if skip_empty_frames and not filtered_bboxes:
+                            frames_skipped += 1
+                            print(f"当前帧未检测到车辆，跳过保存 (已跳过: {frames_skipped} 帧)")
+                            last_capture_time = current_time
+                            # 继续处理下一帧，不计入已处理帧数
+                            continue
+                        
+                        # 获取可用的图像ID，确保不覆盖现有文件
                         frame_id = self.image_count
-                        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         img_filename = f'{frame_id:06d}.png'
                         img_path = os.path.join(self.images_dir, img_filename)
                         
-                        # 保存原始图像
+                        # 检查文件是否已存在，如果存在则增加ID直到找到未使用的
+                        while os.path.exists(img_path):
+                            frame_id += 1
+                            img_filename = f'{frame_id:06d}.png'
+                            img_path = os.path.join(self.images_dir, img_filename)
+                        
+                        # 如果frame_id与原始self.image_count不同，更新并提示用户
+                        if frame_id != self.image_count:
+                            print(f"跳过已存在的文件名，使用新ID: {frame_id}")
+                            self.image_count = frame_id
+                        
+                        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        
+                        # 保存图像
                         carla_image.save_to_disk(img_path)
                         
                         # 保存带有边界框标记的预览图像
@@ -538,8 +584,11 @@ class CarlaDatasetGenerator:
                             cv2.putText(preview_img, f"V{i+1}", (int(x_min), int(y_min) - 5), 
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
                         
-                        # 保存预览图像
+                        # 保存预览图像，使用与原始图像相同的文件名
                         preview_path = os.path.join(self.preview_dir, img_filename)
+                        
+                        # 直接使用相同的文件名保存预览图，不需要检查是否存在
+                        # 因为图像ID已经确保唯一性，所以预览图也会使用唯一的文件名
                         cv2.imwrite(preview_path, preview_img)
                         
                         # 创建VOC标注writer
@@ -578,14 +627,17 @@ class CarlaDatasetGenerator:
                         voc_path = os.path.join(self.annotations_dir, f'{frame_id:06d}.xml')
                         voc_writer.save(voc_path)
                         
-                        self.image_count += 1
+                        self.image_count += 1  # 更新图像计数
                         frames_processed += 1
                         last_capture_time = current_time
                         
                         elapsed_time = time.time() - start_time
                         remaining_time = (elapsed_time / frames_processed) * (num_frames - frames_processed) if frames_processed > 0 else 0
-                        print(f'已采集: {frames_processed}/{num_frames} 帧 ({frames_processed/num_frames*100:.1f}%)，'
-                              f'下一帧将在 {capture_interval} 秒后采集')
+                        status_msg = f'已采集: {frames_processed}/{num_frames} 帧 ({frames_processed/num_frames*100:.1f}%), '
+                        if skip_empty_frames:
+                            status_msg += f'跳过无车辆帧: {frames_skipped} 帧, '
+                        status_msg += f'下一帧将在 {capture_interval} 秒后采集'
+                        print(status_msg)
                         print(f'预计剩余时间: {int(remaining_time//60)}分{int(remaining_time%60)}秒')
                     except Exception as e:
                         print(f"保存数据帧时出错: {e}")
@@ -681,10 +733,11 @@ def parse_arguments():
     parser.add_argument('--image-width', type=int, default=800, help='图像宽度 (默认: 800)')
     parser.add_argument('--image-height', type=int, default=600, help='图像高度 (默认: 600)')
     parser.add_argument('--fov', type=float, default=90.0, help='相机视场角度 (默认: 90.0)')
-    parser.add_argument('--detection-range', type=float, default=75.0, help='车辆检测范围，单位为米 (默认: 75.0)')
+    parser.add_argument('--detection-range', type=float, default=70.0, help='车辆检测范围，单位为米 (默认: 70.0)')
     parser.add_argument('--show-3d-bbox', action='store_true', help='显示3D边界框 (默认不显示)')
     parser.add_argument('--weather', choices=['default', 'badweather', 'night', 'badweather_night'], 
                         default='default', help='天气预设: default(默认晴天), badweather(恶劣天气), night(夜晚), badweather_night(恶劣天气的夜晚)')
+    parser.add_argument('--skip-empty', action='store_true', help='跳过无车辆帧，只保存包含车辆的图像 (默认: 不跳过)')
     
     return parser.parse_args()
 
@@ -714,7 +767,8 @@ def main():
             num_frames=args.num_frames,
             capture_interval=args.capture_interval,
             show_3d_bbox=args.show_3d_bbox,
-            detection_range=args.detection_range
+            detection_range=args.detection_range,
+            skip_empty_frames=args.skip_empty
         )
         
     except KeyboardInterrupt:
