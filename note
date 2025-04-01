@@ -2,7 +2,7 @@ conda activate carla-perception
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather default --no-autopilot --yolo-weights ./best.pt --conf-thres 0.5
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather night --no-autopilot
-python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather_night --no-autopilot
+python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather_night --no-autopilot --yolo-weights ./best.pt --conf-thres 0.5
 
 
 // 生产数据集
