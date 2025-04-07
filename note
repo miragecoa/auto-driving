@@ -1,5 +1,5 @@
 conda activate carla-perception
-python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather default --no-autopilot --yolo-weights ./best.pt --conf-thres 0.5
+python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather default --yolo-weights ./best.pt --conf-thres 0.5 --device cpu
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather night --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather_night --no-autopilot --yolo-weights ./best.pt --conf-thres 0.5
@@ -7,6 +7,11 @@ python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weathe
 
 // 生产数据集
 python generate_camera_bbox_dataset.py --num-frames 10 --capture-interval 1 --skip-empty --weather default
+python generate_radar_dataset.py --num-frames 100 --capture-interval 1 --skip-empty --weather default --hit-tolerance 10
+python generate_lidar_dataset.py --num-frames 10 --capture-interval 1 --skip-empty --weather default
+
+
+
 // 训练模型
 // 转换数据集格式
 python train_vehicle_detector.py --data_path vehicle_dataset --epochs 10000 --batch_size 1
