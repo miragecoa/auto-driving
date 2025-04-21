@@ -467,11 +467,11 @@ class SensorManager:
         orientation_offset = 0.0
         if self.sensor_name:
             if "Left Radar" in self.sensor_name:
-                orientation_offset = -math.pi/2  # -90 degrees
+                orientation_offset = -math.pi/2  # 左雷达是90度，需要-90度偏移适配显示
             elif "Right Radar" in self.sensor_name:
-                orientation_offset = math.pi/2   # 90 degrees
+                orientation_offset = math.pi/2   # 右雷达是270度，需要+90度偏移适配显示
             elif "Rear Radar" in self.sensor_name:
-                orientation_offset = math.pi     # 180 degrees
+                orientation_offset = math.pi     # 180度
         
         # Draw range indicator text
         max_range = float(self.sensor_options.get('range', '50'))

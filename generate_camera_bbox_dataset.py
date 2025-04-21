@@ -13,11 +13,21 @@ import datetime
 import argparse
 from pascal_voc_writer import Writer
 
-# 导入天气预设功能
+# 全局变量声明
+client = None
+
+# 导入perception_utils中的函数
 try:
-    from perception_utils import set_weather_preset
+    from perception_utils import (
+        set_weather_preset,
+        set_random_seed,
+        initialize_world,
+        spawn_ego_vehicle,
+        spawn_surrounding_vehicles,
+        clean_up_all_vehicles
+    )
 except ImportError:
-    print("警告: 无法导入perception_utils中的set_weather_preset函数，将使用基本天气设置")
+    print("警告: 无法导入perception_utils中的函数，将使用基本功能")
     
     # 提供基本的天气预设函数作为备用
     def set_weather_preset(world, preset="default"):
@@ -83,14 +93,21 @@ except ImportError:
         print(f"已设置天气为: {preset}")
         
         return weather
+        
+    # 基础的随机种子设置函数
+    def set_random_seed(seed_value):
+        if seed_value > 0:
+            random.seed(seed_value)
+            np.random.seed(seed_value)
+            print(f"随机种子设置为 {seed_value}")
 
 class CarlaDatasetGenerator:
     def __init__(self, host='localhost', port=2000, output_dir='vehicle_dataset'):
         # 连接到CARLA服务器
         self.client = carla.Client(host, port)
         self.client.set_timeout(10.0)
-        self.world = self.client.get_world()
-        self.bp_lib = self.world.get_blueprint_library()
+        self.world = None  # 将在setup_scenario中初始化
+        self.original_settings = None  # 存储原始世界设置
         
         # 创建输出目录
         self.output_dir = output_dir
@@ -120,6 +137,9 @@ class CarlaDatasetGenerator:
         
         # 边界框绘制
         self.edges = [[0,1], [1,3], [3,2], [2,0], [0,4], [4,5], [5,1], [5,7], [7,6], [6,4], [6,2], [7,3]]
+        
+        # 其他车辆列表
+        self.other_vehicles = []
 
     def build_projection_matrix(self, w, h, fov, is_behind_camera=False):
         """创建相机投影矩阵"""
@@ -223,55 +243,52 @@ class CarlaDatasetGenerator:
         
         return filtered_bboxes
 
-    def setup_scenario(self, num_vehicles=50, weather_preset="default"):
-        """设置模拟场景"""
-        # 首先清除世界上的所有物体
-        print("正在清除世界上的所有物体...")
+    def setup_scenario(self, args):
+        """设置模拟场景，使用与baseline_perception相同的初始化逻辑
         
-        # 获取所有actors
-        all_actors = self.world.get_actors()
+        参数:
+            args: 命令行参数，包含num_vehicles, weather, seed等
+        """
+        print("开始初始化场景，使用与baseline_perception相同的逻辑...")
         
-        # 清理过程：先删除传感器、车辆和行人
-        sensors = [actor for actor in all_actors if 'sensor' in actor.type_id]
-        vehicles = [actor for actor in all_actors if 'vehicle' in actor.type_id]
-        walkers = [actor for actor in all_actors if 'walker' in actor.type_id]
+        # 确保args包含baseline_perception所需的所有参数
+        # perception_utils中初始化世界和生成车辆需要的参数
+        if not hasattr(args, 'sync'):
+            print("添加默认sync参数")
+            args.sync = True
+            
+        if not hasattr(args, 'autopilot'):
+            print("添加默认autopilot参数")
+            args.autopilot = True
+            
+        # 初始化世界（使用perception_utils中的函数）
+        print(f"使用seed={args.seed}初始化世界")
+        self.world, self.original_settings = initialize_world(self.client, args)
+        self.bp_lib = self.world.get_blueprint_library()
         
-        print(f"发现 {len(sensors)} 个传感器，{len(vehicles)} 辆车辆，{len(walkers)} 个行人")
+        # 显式调用set_random_seed确保种子设置正确
+        set_random_seed(args.seed)
         
-        # 按优先级顺序删除
-        for actor in sensors + vehicles + walkers:
-            try:
-                actor.destroy()
-            except Exception as e:
-                print(f"删除actor {actor.id} 时出错: {e}")
-                
-        print("场景已清理完成")
+        # 生成主车辆（使用perception_utils中的函数）
+        print(f"使用seed={args.seed}生成主车辆")
+        main_vehicle, spawn_idx, spawn_points = spawn_ego_vehicle(self.world, args)
+        self.vehicle = main_vehicle
+        print(f"主车已生成，车辆ID: {self.vehicle.id}, 生成点索引: {spawn_idx}")
         
-        # 设置天气
-        set_weather_preset(self.world, weather_preset)
+        # 生成NPC车辆（使用perception_utils中的函数）
+        # 过滤掉已使用的生成点
+        available_spawn_points = [p for i, p in enumerate(spawn_points) if i != spawn_idx]
+        npc_count = min(args.num_vehicles, len(available_spawn_points))
         
-        # 获取地图生成点
-        spawn_points = self.world.get_map().get_spawn_points()
-        random.shuffle(spawn_points)  # 随机排序生成点
-        
-        # 设置交通管理器参数
-        traffic_manager = self.client.get_trafficmanager()
-        traffic_manager.set_global_distance_to_leading_vehicle(2.5)  # 设置前车距离
-        traffic_manager.set_synchronous_mode(True)
-        
-        # 生成主车辆
-        vehicle_bp = self.bp_lib.find('vehicle.lincoln.mkz_2020')
-        spawn_point = random.choice(spawn_points)
-        self.vehicle = self.world.try_spawn_actor(vehicle_bp, spawn_point)
-        if self.vehicle is None:
-            # 如果生成失败，尝试其他点位
-            for sp in spawn_points:
-                self.vehicle = self.world.try_spawn_actor(vehicle_bp, sp)
-                if self.vehicle is not None:
-                    break
-        
-        if self.vehicle is None:
-            raise Exception("无法生成主车辆")
+        if npc_count > 0:
+            print(f"尝试生成{npc_count}辆NPC车辆")
+            self.other_vehicles = spawn_surrounding_vehicles(
+                self.client, 
+                self.world, 
+                number_of_vehicles=npc_count, 
+                spawn_points=available_spawn_points
+            )
+            print(f"已生成 {len(self.other_vehicles)} 辆NPC车辆")
         
         # 生成相机
         camera_bp = self.bp_lib.find('sensor.camera.rgb')
@@ -282,116 +299,30 @@ class CarlaDatasetGenerator:
         camera_init_trans = carla.Transform(carla.Location(z=2))
         self.camera = self.world.spawn_actor(camera_bp, camera_init_trans, attach_to=self.vehicle)
         
-        # 设置自动驾驶
-        try:
-            self.vehicle.set_autopilot(True, traffic_manager.get_port())
-        except:
-            # 旧版本CARLA可能不接受端口参数
-            self.vehicle.set_autopilot(True)
-        
-        # 设置主车辆行为 - 设置为原来的1/3速度
-        try:
-            traffic_manager.ignore_lights_percentage(self.vehicle, 30)  # 30%概率忽略红绿灯，保持适当移动
-            traffic_manager.distance_to_leading_vehicle(self.vehicle, 1.0)  # 正常前车距离
-            
-            # 主车速度设置为原来的1/3 
-            # 在CARLA中，值越大表示越慢，66.7表示只有33.3%的原速度
-            # 该值表示"比正常速度慢多少百分比"
-            print("设置主车速度为正常速度的1/3")
-            traffic_manager.vehicle_percentage_speed_difference(self.vehicle, 66.7)
-            
-        except Exception as e:
-            print(f"注意: 设置高级交通管理器参数失败，这在某些CARLA版本中是正常的: {e}")
-        
-        # 设置同步模式
-        settings = self.world.get_settings()
-        settings.synchronous_mode = True  # 启用同步模式
-        settings.fixed_delta_seconds = 0.05
-        self.world.apply_settings(settings)
-
         # 创建队列存储传感器数据
         self.image_queue = queue.Queue()
         self.camera.listen(self.image_queue.put)
         
-        # 生成其他车辆，避免相互卡死
-        vehicles_list = []
-        remaining_spawn_points = spawn_points.copy()
+        # 获取交通管理器以进行额外的车辆设置
+        traffic_manager = self.client.get_trafficmanager(8000)
         
-        # 移除主车所在的生成点
-        if self.vehicle is not None:
-            vehicle_transform = self.vehicle.get_transform()
-            for i, sp in enumerate(remaining_spawn_points):
-                if abs(sp.location.x - vehicle_transform.location.x) < 5 and \
-                   abs(sp.location.y - vehicle_transform.location.y) < 5:
-                    remaining_spawn_points.pop(i)
-                    break
-        
-        # 限制车辆数量，不要超过生成点数量
-        num_vehicles = min(num_vehicles, len(remaining_spawn_points))
-        
-        # ===== 使用与baseline_perception相同的方法过滤车辆蓝图 =====
-        # 获取所有车辆蓝图
-        all_vehicles = self.bp_lib.filter('vehicle.*')
-        
-        # 直接通过车轮数过滤，确保只有4轮车辆
-        car_blueprints = [bp for bp in all_vehicles if int(bp.get_attribute('number_of_wheels')) == 4]
-        
-        print(f"CARLA中所有可用车辆类型: {len(all_vehicles)}种")
-        print(f"已筛选出 {len(car_blueprints)} 种四轮汽车类型")
-        
-        if len(car_blueprints) == 0:
-            print("警告：没有找到符合条件的四轮汽车蓝图，将使用默认汽车蓝图")
-            # 使用一些已知的四轮车，而不是所有车辆
-            safe_cars = ['vehicle.audi.a2', 'vehicle.audi.tt', 'vehicle.lincoln.mkz2017']
-            car_blueprints = [self.bp_lib.find(car) for car in safe_cars if self.bp_lib.find(car)]
-            if not car_blueprints:
-                raise Exception("无法找到任何可用的四轮车蓝图，请检查CARLA环境")
-        
-        # 生成NPC车辆
-        batch = []
-        for i in range(num_vehicles):
-            if i >= len(remaining_spawn_points):
-                break
-                
-            vehicle_bp = random.choice(car_blueprints)
-            # 设置车辆不会不稳定（避免物理效应导致翻车）
-            vehicle_bp.set_attribute('role_name', 'autopilot')
+        # 为主车设置额外参数
+        try:
+            # 主车速度设置为原来的1/3 
+            traffic_manager.vehicle_percentage_speed_difference(self.vehicle, 66.7)
+            print("设置主车速度为正常速度的1/3")
+        except Exception as e:
+            print(f"设置主车参数时出错: {e}")
             
-            # 在特定的生成点生成车辆，避免碰撞
-            npc = self.world.try_spawn_actor(vehicle_bp, remaining_spawn_points[i])
-            if npc:
-                try:
-                    npc.set_autopilot(True, traffic_manager.get_port())
-                except:
-                    # 旧版本CARLA可能不接受端口参数
-                    npc.set_autopilot(True)
-                    
-                # 为NPC车辆设置正常默认行为
-                try:
-                    # 车辆有20%概率可能忽略红绿灯，确保交通不会完全堵塞
-                    traffic_manager.ignore_lights_percentage(npc, 20)
-                    # 设置正常的车距
-                    traffic_manager.distance_to_leading_vehicle(npc, 1.5)
-                    
-                    # 设置为原来的1/3速度
-                    # 在CARLA中，值越大表示越慢，66.7表示只有33.3%的原速度
-                    traffic_manager.vehicle_percentage_speed_difference(npc, 66.7)
-                    print(f"设置NPC车辆(ID:{npc.id})速度为正常速度的1/3")
-                    
-                    # 默认车道变更行为
-                    traffic_manager.auto_lane_change(npc, True)
-                    try:
-                        # 启用碰撞检测，保障安全驾驶
-                        traffic_manager.collision_detection(npc, True)
-                    except:
-                        pass
-                    
-                except Exception as e:
-                    print(f"注意: 设置车辆 {npc.id} 的高级交通管理器参数失败: {e}")
-                    
-                vehicles_list.append(npc)
-        
-        print(f"成功初始化场景: 已生成 {len(vehicles_list)} 辆动态NPC车辆，主车ID: {self.vehicle.id}")
+        # 为其他车辆设置额外参数
+        for npc in self.other_vehicles:
+            try:
+                # 设置为原来的1/3速度
+                traffic_manager.vehicle_percentage_speed_difference(npc, 66.7)
+            except Exception as e:
+                print(f"设置NPC车辆参数时出错: {e}")
+                
+        print("场景初始化完成")
 
     def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50, skip_empty_frames=False):
         """生成数据集"""
@@ -706,18 +637,24 @@ class CarlaDatasetGenerator:
 
     def cleanup(self):
         """清理资源"""
-        # 恢复异步模式
-        settings = self.world.get_settings()
-        settings.synchronous_mode = False
-        self.world.apply_settings(settings)
+        # 恢复原始世界设置
+        if self.original_settings:
+            self.world.apply_settings(self.original_settings)
         
-        # 销毁演员
+        # 销毁传感器
         if self.camera:
             self.camera.destroy()
-        if self.vehicle:
+            
+        # 销毁所有生成的车辆
+        for vehicle in self.other_vehicles:
+            if vehicle.is_alive:
+                vehicle.destroy()
+                
+        # 销毁主车
+        if self.vehicle and self.vehicle.is_alive:
             self.vehicle.destroy()
         
-        print('已清理资源')
+        print('已清理所有资源')
 
 
 def parse_arguments():
@@ -738,6 +675,12 @@ def parse_arguments():
     parser.add_argument('--weather', choices=['default', 'badweather', 'night', 'badweather_night'], 
                         default='default', help='天气预设: default(默认晴天), badweather(恶劣天气), night(夜晚), badweather_night(恶劣天气的夜晚)')
     parser.add_argument('--skip-empty', action='store_true', help='跳过无车辆帧，只保存包含车辆的图像 (默认: 不跳过)')
+    parser.add_argument('--seed', metavar='S', default=0, type=int, 
+                      help='用于可重现结果的随机种子 (默认: 0，表示随机行为)')
+    parser.add_argument('--sync', action='store_true', default=True,
+                      help='启用同步模式 (默认: 启用)')
+    parser.add_argument('--autopilot', action='store_true', default=True,
+                      help='启用车辆自动驾驶 (默认: 启用)')
     
     return parser.parse_args()
 
@@ -746,6 +689,9 @@ def main():
     try:
         # 解析命令行参数
         args = parse_arguments()
+        
+        # 确保命令行参数的一致性
+        global client  # 确保与baseline_perception相同的全局变量定义
         
         # 创建数据集生成器
         generator = CarlaDatasetGenerator(
@@ -759,8 +705,15 @@ def main():
         generator.image_h = args.image_height
         generator.fov = args.fov
         
-        # 设置场景，传入天气预设参数
-        generator.setup_scenario(num_vehicles=args.num_vehicles, weather_preset=args.weather)
+        # 使用与baseline_perception完全相同的方式连接客户端
+        client = carla.Client(args.host, args.port)
+        client.set_timeout(10.0)  # 与baseline_perception相同的超时设置
+        
+        # 确保由客户端正确初始化
+        generator.client = client
+        
+        # 设置场景 - 现在直接传递args
+        generator.setup_scenario(args)
         
         # 生成数据集
         generator.generate_dataset(

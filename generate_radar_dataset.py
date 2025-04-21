@@ -96,11 +96,13 @@ class CarlaDatasetGenerator:
         self.output_dir = output_dir
         self.images_dir = os.path.join(output_dir, 'images')
         self.annotations_dir = os.path.join(output_dir, 'annotations')
-        self.preview_dir = os.path.join(output_dir, 'previews')  # 新增预览目录
+        self.preview_dir = os.path.join(output_dir, 'previews')  # 预览目录
+        self.radar_points_dir = os.path.join(output_dir, 'radar_points')  # 雷达点云数据目录
         
         os.makedirs(self.images_dir, exist_ok=True)
         os.makedirs(self.annotations_dir, exist_ok=True)
-        os.makedirs(self.preview_dir, exist_ok=True)  # 创建预览目录
+        os.makedirs(self.preview_dir, exist_ok=True)
+        os.makedirs(self.radar_points_dir, exist_ok=True)  # 创建雷达点云数据目录
         
         # 数据集属性
         self.image_count = 0
@@ -110,8 +112,17 @@ class CarlaDatasetGenerator:
         
         # 设置场景
         self.vehicle = None
-        self.radar = None  # 改为雷达传感器
-        self.radar_queue = None
+        # 改为四个方向的雷达传感器
+        self.radar_front = None
+        self.radar_back = None
+        self.radar_left = None
+        self.radar_right = None
+        
+        # 四个方向的雷达数据队列
+        self.radar_front_queue = None
+        self.radar_back_queue = None
+        self.radar_left_queue = None
+        self.radar_right_queue = None
         
         # 雷达/图像属性
         self.image_w = 800
@@ -274,7 +285,7 @@ class CarlaDatasetGenerator:
         if self.vehicle is None:
             raise Exception("无法生成主车辆")
         
-        # 生成前向雷达传感器，替代原来的相机
+        # 创建雷达传感器蓝图
         radar_bp = self.bp_lib.find('sensor.other.radar')
         radar_bp.set_attribute('horizontal_fov', str(self.radar_fov))
         radar_bp.set_attribute('vertical_fov', '10.0')  # 垂直视场角度
@@ -282,9 +293,23 @@ class CarlaDatasetGenerator:
         # 设置雷达点云密度
         radar_bp.set_attribute('points_per_second', '1500')
         
-        # 在车辆前方附加雷达传感器
-        radar_init_trans = carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0))
-        self.radar = self.world.spawn_actor(radar_bp, radar_init_trans, attach_to=self.vehicle)
+        # 创建四个方向的雷达传感器
+
+        # 1. 前向雷达
+        front_transform = carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0))
+        self.radar_front = self.world.spawn_actor(radar_bp, front_transform, attach_to=self.vehicle)
+        
+        # 2. 后向雷达
+        back_transform = carla.Transform(carla.Location(x=-2.0, z=1.0), carla.Rotation(yaw=180))
+        self.radar_back = self.world.spawn_actor(radar_bp, back_transform, attach_to=self.vehicle)
+        
+        # 3. 左向雷达
+        left_transform = carla.Transform(carla.Location(y=1.0, z=1.0), carla.Rotation(yaw=90))
+        self.radar_left = self.world.spawn_actor(radar_bp, left_transform, attach_to=self.vehicle)
+        
+        # 4. 右向雷达
+        right_transform = carla.Transform(carla.Location(y=-1.0, z=1.0), carla.Rotation(yaw=270))
+        self.radar_right = self.world.spawn_actor(radar_bp, right_transform, attach_to=self.vehicle)
         
         # 设置自动驾驶
         try:
@@ -311,9 +336,17 @@ class CarlaDatasetGenerator:
         settings.fixed_delta_seconds = 0.05
         self.world.apply_settings(settings)
 
-        # 创建队列存储雷达数据
-        self.radar_queue = queue.Queue()
-        self.radar.listen(self.radar_queue.put)
+        # 创建队列存储四个方向的雷达数据
+        self.radar_front_queue = queue.Queue()
+        self.radar_back_queue = queue.Queue()
+        self.radar_left_queue = queue.Queue()
+        self.radar_right_queue = queue.Queue()
+        
+        # 设置雷达监听
+        self.radar_front.listen(self.radar_front_queue.put)
+        self.radar_back.listen(self.radar_back_queue.put)
+        self.radar_left.listen(self.radar_left_queue.put)
+        self.radar_right.listen(self.radar_right_queue.put)
         
         # 生成其他车辆，避免相互卡死
         vehicles_list = []
@@ -395,8 +428,31 @@ class CarlaDatasetGenerator:
         
         print(f"成功初始化场景: 已生成 {len(vehicles_list)} 辆动态NPC车辆，主车ID: {self.vehicle.id}")
 
-    def process_radar_data(self, radar_data):
-        """处理雷达数据，创建雷达可视化图像"""
+    def merge_radar_data(self):
+        """从四个雷达获取数据并合并"""
+        try:
+            # 获取四个方向的雷达数据
+            radar_front_data = self.radar_front_queue.get(timeout=2.0)
+            radar_back_data = self.radar_back_queue.get(timeout=2.0)
+            radar_left_data = self.radar_left_queue.get(timeout=2.0)
+            radar_right_data = self.radar_right_queue.get(timeout=2.0)
+            
+            # 处理并合并四个方向的雷达数据
+            radar_img, radar_points = self.process_radar_data([
+                ("front", radar_front_data),
+                ("back", radar_back_data),
+                ("left", radar_left_data),
+                ("right", radar_right_data)
+            ])
+            
+            return radar_img, radar_points
+            
+        except queue.Empty:
+            print("雷达数据获取超时")
+            return None, None
+
+    def process_radar_data(self, radar_data_list):
+        """处理多个方向的雷达数据，创建雷达可视化图像"""
         # 创建雷达图像画布
         radar_img = np.zeros((self.image_h, self.image_w, 3), dtype=np.uint8)
         
@@ -426,53 +482,120 @@ class CarlaDatasetGenerator:
             cv2.putText(radar_img, f"{distance:.0f}m", (label_x + 5, label_y), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (150, 150, 150), 1)
         
-        # 处理雷达探测点
+        # 处理所有方向的雷达探测点
         radar_points = []
-        for detect in radar_data:
-            # 获取极坐标信息
-            azimuth = detect.azimuth
-            altitude = detect.altitude
-            depth = detect.depth  # 距离
-            velocity = detect.velocity  # 相对速度
-            
-            # 根据极坐标计算直角坐标 - 注意y轴向下
-            # 计算点在雷达图像上的位置，从中心点出发
-            scale = min(self.image_w, self.image_h) / (2 * self.radar_range)
-            x = center_x + int(depth * math.sin(azimuth) * scale)
-            y = center_y - int(depth * math.cos(azimuth) * scale)  # 减法是因为屏幕坐标y轴向下
-            
-            # 确保点在图像范围内
-            if 0 <= x < self.image_w and 0 <= y < self.image_h:
-                # 统一使用深绿色表示雷达点，不再根据速度变化颜色
-                color = (0, 100, 0)  # 深绿色
+        point_id_counter = 0
+        
+        # 方向到颜色的映射，用于在预览图像中区分不同方向的点
+        direction_colors = {
+            "front": (0, 180, 0),   # 深绿色
+            "back": (0, 120, 180),  # 橙色
+            "left": (180, 0, 180),  # 紫色
+            "right": (180, 180, 0)  # 青色
+        }
+        
+        for direction, radar_data in radar_data_list:
+            for detect in radar_data:
+                # 获取极坐标信息
+                azimuth = detect.azimuth
+                altitude = detect.altitude
+                depth = detect.depth  # 距离
+                velocity = detect.velocity  # 相对速度
                 
-                # 点的大小仍然基于速度，使移动较快的点更明显
-                point_size = min(5, max(2, int(abs(velocity)) + 2))
-                cv2.circle(radar_img, (x, y), point_size, color, -1)
+                # 调整方位角度，考虑雷达的朝向
+                adjusted_azimuth = azimuth
+                if direction == "back":
+                    # 后向雷达，需要旋转180度
+                    adjusted_azimuth = azimuth + math.pi
+                elif direction == "left":
+                    # 左向雷达，需要旋转90度
+                    adjusted_azimuth = azimuth + math.pi/2
+                elif direction == "right":
+                    # 右向雷达，需要旋转270度
+                    adjusted_azimuth = azimuth - math.pi/2
                 
-                # 存储点信息供后续处理
-                radar_points.append({
-                    'x': x, 'y': y,  # 图像坐标
-                    'depth': depth,  # 实际距离
-                    'azimuth': azimuth,  # 方位角
-                    'velocity': velocity,  # 相对速度
-                    'raw_position': (detect.depth, detect.azimuth),  # 原始极坐标
-                })
+                # 确保方位角在-π到π范围内
+                while adjusted_azimuth > math.pi:
+                    adjusted_azimuth -= 2 * math.pi
+                while adjusted_azimuth < -math.pi:
+                    adjusted_azimuth += 2 * math.pi
                 
-                # 为明显移动的物体绘制速度矢量线
-                if abs(velocity) > 3.0:
-                    line_length = min(20, max(5, int(abs(velocity) * 2)))
-                    end_x = x + int(line_length * math.sin(azimuth))
-                    end_y = y - int(line_length * math.cos(azimuth))
-                    cv2.line(radar_img, (x, y), (end_x, end_y), color, 1)
+                # 根据极坐标计算直角坐标 - 注意y轴向下
+                # 计算点在雷达图像上的位置，从中心点出发
+                scale = min(self.image_w, self.image_h) / (2 * self.radar_range)
+                x = center_x + int(depth * math.sin(adjusted_azimuth) * scale)
+                y = center_y - int(depth * math.cos(adjusted_azimuth) * scale)  # 减法是因为屏幕坐标y轴向下
+                
+                # 确保点在图像范围内
+                if 0 <= x < self.image_w and 0 <= y < self.image_h:
+                    # 根据方向选择颜色
+                    color = direction_colors.get(direction, (0, 100, 0))
+                    
+                    # 点的大小仍然基于速度，使移动较快的点更明显
+                    point_size = min(5, max(2, int(abs(velocity)) + 2))
+                    cv2.circle(radar_img, (x, y), point_size, color, -1)
+                    
+                    # 获取更多雷达属性，如信号强度等
+                    try:
+                        # 在CARLA 0.9.10+中可用
+                        snr = detect.get_snr() if hasattr(detect, 'get_snr') else 0.0
+                    except:
+                        snr = 0.0
+                    
+                    # 计算三维世界坐标 (相对于雷达传感器)
+                    world_x = depth * math.cos(altitude) * math.cos(azimuth)
+                    world_y = depth * math.cos(altitude) * math.sin(azimuth)
+                    world_z = depth * math.sin(altitude)
+                    
+                    # 根据雷达方向调整世界坐标
+                    if direction == "back":
+                        world_x = -world_x
+                        world_y = -world_y
+                    elif direction == "left":
+                        temp_x = world_x
+                        world_x = -world_y
+                        world_y = temp_x
+                    elif direction == "right":
+                        temp_x = world_x
+                        world_x = world_y
+                        world_y = -temp_x
+                    
+                    # 存储点信息供后续处理
+                    radar_points.append({
+                        'id': point_id_counter,  # 雷达点ID（全局唯一）
+                        'direction': direction,  # 雷达方向
+                        'x': x, 'y': y,  # 图像坐标
+                        'depth': depth,  # 实际距离
+                        'azimuth': adjusted_azimuth,  # 调整后的方位角
+                        'original_azimuth': azimuth,  # 原始方位角
+                        'altitude': altitude,  # 俯仰角
+                        'velocity': velocity,  # 相对速度
+                        'snr': snr,  # 信噪比
+                        'raw_position': (detect.depth, detect.azimuth, detect.altitude),  # 原始极坐标
+                        'world_position': (world_x, world_y, world_z),  # 3D世界坐标 (相对于车辆)
+                        'hit_vehicle_id': None,  # 击中的车辆ID，初始为None
+                        'is_hitting_vehicle': False,  # 是否击中车辆
+                    })
+                    point_id_counter += 1
+                    
+                    # 为明显移动的物体绘制速度矢量线
+                    if abs(velocity) > 3.0:
+                        line_length = min(20, max(5, int(abs(velocity) * 2)))
+                        end_x = x + int(line_length * math.sin(adjusted_azimuth))
+                        end_y = y - int(line_length * math.cos(adjusted_azimuth))
+                        cv2.line(radar_img, (x, y), (end_x, end_y), color, 1)
         
         return radar_img, radar_points
 
-    def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50, skip_empty_frames=False, hit_tolerance=5):
+    def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50, skip_empty_frames=False, hit_tolerance=5, save_radar_points=False):
         """生成雷达数据集"""
         print(f"开始生成雷达数据集：目标帧数 {num_frames}，采集间隔 {capture_interval} 秒")
         print(f"雷达范围: {self.radar_range}米，检测范围: {detection_range}米")
+        print(f"使用前、后、左、右四个方向的雷达传感器采集数据")
         print(f"注意: 只有被雷达点云实际击中的车辆才会被标记（容忍范围: {hit_tolerance}像素）")
+        
+        if save_radar_points:
+            print("已启用雷达点云数据保存: 将记录每个雷达点及其击中的目标")
         
         if skip_empty_frames:
             print("已启用空帧过滤: 只保存包含车辆标记的帧")
@@ -510,10 +633,12 @@ class CarlaDatasetGenerator:
             try:
                 # 刷新世界
                 self.world.tick()
-                radar_data = self.radar_queue.get()
                 
-                # 处理雷达数据，生成雷达图像
-                radar_img, radar_points = self.process_radar_data(radar_data)
+                # 从四个雷达获取数据并合并
+                radar_img, radar_points = self.merge_radar_data()
+                
+                if radar_img is None or radar_points is None:
+                    continue
                 
                 # 创建一个工作副本用于显示
                 display_img = radar_img.copy()
@@ -608,16 +733,21 @@ class CarlaDatasetGenerator:
                                     
                                     # 检查是否有雷达点与当前车辆的边界框重叠
                                     radar_hit = False
+                                    hitting_points = []  # 记录击中当前车辆的雷达点
                                     for point in radar_points:
                                         # 检查雷达点是否在边界框内或边界框外的容忍范围内
                                         if ((x1-hit_tolerance) <= point['x'] <= (x2+hit_tolerance) and 
                                             (y1-hit_tolerance) <= point['y'] <= (y2+hit_tolerance)):
                                             radar_hit = True
-                                            break
+                                            
+                                            # 记录该点击中了哪个车辆
+                                            point['hit_vehicle_id'] = npc.id
+                                            point['is_hitting_vehicle'] = True
+                                            hitting_points.append(point)
                                     
                                     # 只有当车辆被雷达点击中时，才标记为检测到的车辆
                                     if radar_hit:
-                                        # 存储检测到的车辆信息
+                                        # 存储检测到的车辆信息，增加点击车辆的雷达点信息
                                         detected_vehicles.append({
                                             "vehicle_id": npc.id,
                                             "bbox": [int(x1), int(y1), int(x2), int(y2)],
@@ -625,7 +755,9 @@ class CarlaDatasetGenerator:
                                             "angle": angle,
                                             "position": (x, y),
                                             "real_position": (dist, angle),  # 保存极坐标
-                                            "box_size_factor": box_size_factor  # 保存缩放因子以便调试
+                                            "box_size_factor": box_size_factor,  # 保存缩放因子以便调试
+                                            "hitting_points_count": len(hitting_points),  # 击中该车辆的雷达点数量
+                                            "hitting_points_ids": [p['id'] for p in hitting_points]  # 击中该车辆的雷达点ID列表
                                         })
                                         
                                         # 在雷达图上绘制边界框
@@ -727,6 +859,40 @@ class CarlaDatasetGenerator:
                         preview_path = os.path.join(self.preview_dir, img_filename)
                         cv2.imwrite(preview_path, preview_img)
                         
+                        # 保存雷达点云数据（如果启用）
+                        if save_radar_points:
+                            # 创建雷达点云数据字典
+                            radar_data = {
+                                "frame_id": frame_id,
+                                "timestamp": timestamp,
+                                "total_points": len(radar_points),
+                                "vehicle_count": len(detected_vehicles),
+                                "points": []
+                            }
+                            
+                            # 将每个雷达点的信息添加到数据中
+                            for point in radar_points:
+                                radar_data["points"].append({
+                                    "id": point["id"],
+                                    "direction": point["direction"],  # 雷达方向
+                                    "depth": point["depth"],
+                                    "azimuth": point["azimuth"],
+                                    "altitude": point["altitude"],
+                                    "velocity": point["velocity"],
+                                    "snr": point["snr"],
+                                    "world_position": point["world_position"],
+                                    "image_position": [point["x"], point["y"]],
+                                    "hit_vehicle_id": point["hit_vehicle_id"],
+                                    "is_hitting_vehicle": point["is_hitting_vehicle"]
+                                })
+                            
+                            # 保存雷达点云数据为JSON文件
+                            radar_path = os.path.join(self.radar_points_dir, f'{frame_id:06d}.json')
+                            with open(radar_path, 'w') as f:
+                                json.dump(radar_data, f, indent=2)
+                            
+                            print(f"已保存雷达点云数据: {len(radar_points)} 个点，其中 {sum(1 for p in radar_points if p['is_hitting_vehicle'])} 个点击中车辆")
+                        
                         # 创建VOC标注writer
                         voc_writer = Writer(img_path, self.image_w, self.image_h)
                         
@@ -798,6 +964,11 @@ class CarlaDatasetGenerator:
         print("数据采集完成，正在保存COCO格式数据集...")
         self.save_coco_dataset()
         
+        # 如果启用了雷达点云数据保存，则保存元数据
+        if save_radar_points:
+            print("正在保存雷达点云数据集元数据...")
+            self.save_radar_dataset_metadata()
+        
         # 打印数据集统计信息
         print(f"\n数据集生成统计:")
         print(f"- 总共采集雷达图像: {self.image_count} 帧")
@@ -849,18 +1020,60 @@ class CarlaDatasetGenerator:
         settings.synchronous_mode = False
         self.world.apply_settings(settings)
         
-        # 销毁演员
-        if self.radar:
-            self.radar.destroy()
+        # 销毁四个方向的雷达传感器
+        for radar in [self.radar_front, self.radar_back, self.radar_left, self.radar_right]:
+            if radar:
+                radar.destroy()
+        
         if self.vehicle:
             self.vehicle.destroy()
         
         print('已清理资源')
 
+    def save_radar_dataset_metadata(self):
+        """保存雷达点云数据集的元数据文件"""
+        metadata = {
+            "info": {
+                "description": "CARLA Radar Point Cloud Dataset with Multi-directional Radar",
+                "version": "1.0",
+                "year": datetime.datetime.now().year,
+                "contributor": "CARLA Simulator",
+                "date_created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            },
+            "radar_parameters": {
+                "horizontal_fov": self.radar_fov,
+                "vertical_fov": 10.0,  # 默认垂直FOV
+                "range": self.radar_range,
+                "image_width": self.image_w,
+                "image_height": self.image_h
+            },
+            "radar_sensors": {
+                "directions": ["front", "back", "left", "right"],
+                "positions": {
+                    "front": {"x": 2.0, "y": 0.0, "z": 1.0, "yaw": 0},
+                    "back": {"x": -2.0, "y": 0.0, "z": 1.0, "yaw": 180},
+                    "left": {"x": 0.0, "y": 1.0, "z": 1.0, "yaw": 90},
+                    "right": {"x": 0.0, "y": -1.0, "z": 1.0, "yaw": 270}
+                }
+            },
+            "files": {
+                "radar_points_dir": "radar_points",
+                "images_dir": "images",
+                "annotations_dir": "annotations",
+                "previews_dir": "previews"
+            }
+        }
+        
+        metadata_path = os.path.join(self.output_dir, 'radar_dataset_metadata.json')
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=4)
+        
+        print(f'雷达点云数据集元数据已保存至: {metadata_path}')
+
 
 def parse_arguments():
     """解析命令行参数"""
-    parser = argparse.ArgumentParser(description='CARLA雷达数据集生成器 - 只标记被雷达点击中的车辆')
+    parser = argparse.ArgumentParser(description='CARLA雷达数据集生成器 - 使用前后左右四个方向的雷达传感器收集数据')
     
     parser.add_argument('--host', default='localhost', help='CARLA服务器主机名 (默认: localhost)')
     parser.add_argument('--port', type=int, default=2000, help='CARLA服务器端口 (默认: 2000)')
@@ -870,13 +1083,14 @@ def parse_arguments():
     parser.add_argument('--capture-interval', type=float, default=5.0, help='帧捕获间隔，单位为秒 (默认: 5.0)')
     parser.add_argument('--image-width', type=int, default=800, help='雷达图像宽度 (默认: 800)')
     parser.add_argument('--image-height', type=int, default=600, help='雷达图像高度 (默认: 600)')
-    parser.add_argument('--fov', type=float, default=120.0, help='雷达水平视场角度 (默认: 120.0)')
+    parser.add_argument('--fov', type=float, default=120.0, help='每个雷达的水平视场角度 (默认: 120.0)')
     parser.add_argument('--detection-range', type=float, default=70.0, help='雷达探测范围，单位为米 (默认: 70.0)')
     parser.add_argument('--hit-tolerance', type=int, default=5, help='雷达点击中判定的容忍值范围，单位为像素 (默认: 5)')
     parser.add_argument('--show-3d-bbox', action='store_true', help='在预览中显示3D边界框（已弃用）')
     parser.add_argument('--weather', choices=['default', 'badweather', 'night', 'badweather_night'], 
                         default='default', help='天气预设: default(默认晴天), badweather(恶劣天气), night(夜晚), badweather_night(恶劣天气的夜晚)')
     parser.add_argument('--skip-empty', action='store_true', help='跳过无车辆帧，只保存包含车辆的图像 (默认: 不跳过)')
+    parser.add_argument('--save-radar-points', action='store_true', help='保存雷达点云数据，用于训练雷达识别模型 (默认: 不保存)')
     
     return parser.parse_args()
 
@@ -909,7 +1123,8 @@ def main():
             show_3d_bbox=args.show_3d_bbox,
             detection_range=args.detection_range,
             skip_empty_frames=args.skip_empty,
-            hit_tolerance=args.hit_tolerance
+            hit_tolerance=args.hit_tolerance,
+            save_radar_points=args.save_radar_points
         )
         
     except KeyboardInterrupt:

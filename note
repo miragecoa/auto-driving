@@ -1,13 +1,13 @@
 conda activate carla-perception
-python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather default --yolo-weights ./best.pt --conf-thres 0.5 --device cpu
+python baseline_perception.py --no-autopilot --sync --vehicles 50 --seed 42 --range 50 --weather default --yolo-weights ./best.pt --conf-thres 0.5 --device cpu --radar-model ./radar_model --radar-conf-thres 0.7
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather night --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather_night --no-autopilot --yolo-weights ./best.pt --conf-thres 0.5
 
 
 // 生产数据集
-python generate_camera_bbox_dataset.py --num-frames 10 --capture-interval 1 --skip-empty --weather default
-python generate_radar_dataset.py --num-frames 100 --capture-interval 1 --skip-empty --weather default --hit-tolerance 10
+python generate_camera_bbox_dataset.py --num-frames 10 --capture-interval 10 --skip-empty --weather default
+
 python generate_lidar_dataset.py --num-frames 10 --capture-interval 1 --skip-empty --weather default
 
 
@@ -21,3 +21,15 @@ python C:\project\auto-driving\yolov5\train.py --save-period 100 --data=vehicle_
 python preview_predictions.py --weights ./last.pt
 python preview_predictions.py --weights ./last.pt --debug_level 2
 
+
+//雷达模型
+python generate_radar_dataset.py --num-frames 100 --capture-interval 1 --skip-empty --weather default --hit-tolerance 10 --save-radar-points --output-dir radar_pointcloud_dataset
+python train_radar_model.py --data_dir radar_pointcloud_dataset/radar_points --model_dir radar_model
+python radar_inference.py --model_dir radar_model --data_dir radar_pointcloud_dataset/radar_points --output_dir results
+python carla_radar_realtime.py --model_dir radar_model --vehicles 50 --weather default --seed 42
+
+// Lidar
+python generate_lidar_dataset.py --lidar-points-per-second=100000 --output-dir=lidar_dataset --num-frames=200 --save-lidar-points --capture-interval 5 --skip-empty --weather default --output-dir lidar_dataset --hit-tolerance 5
+
+// 训练lidar模型
+python train_lidar_model.py --dataset lidar_dataset --output-dir lidar_model --epochs 30
