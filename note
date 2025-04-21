@@ -1,5 +1,5 @@
 conda activate carla-perception
-python baseline_perception.py --no-autopilot --sync --vehicles 50 --seed 42 --range 50 --weather default --yolo-weights ./best.pt --conf-thres 0.5 --device cpu --radar-model ./radar_model --radar-conf-thres 0.7
+python baseline_perception.py --lidar-model ./lidar_model --lidar-conf-thres 0.6 --sync --vehicles 50 --seed 42 --range 50 --weather default --yolo-weights ./best.pt --conf-thres 0.5 --device cpu --radar-model ./radar_model --radar-conf-thres 0.7
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather night --no-autopilot
 python baseline_perception.py --sync --vehicles 50 --seed 42 --range 50 --weather badweather_night --no-autopilot --yolo-weights ./best.pt --conf-thres 0.5
@@ -33,3 +33,4 @@ python generate_lidar_dataset.py --lidar-points-per-second=100000 --output-dir=l
 
 // 训练lidar模型
 python train_lidar_model.py --dataset lidar_dataset --output-dir lidar_model --epochs 30
+python carla_lidar_realtime.py --model-dir lidar_model --show-confidence

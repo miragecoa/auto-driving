@@ -15,6 +15,7 @@ import cv2  # 确保导入cv2
 import math
 import torch.nn as nn
 import torch.nn.functional as F
+import json
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -74,6 +75,146 @@ class RadarPointClassifier(nn.Module):
         self.bn2 = nn.BatchNorm1d(hidden_size)
         
         self.dropout = nn.Dropout(dropout_rate)
+    
+    def forward(self, x):
+        x = F.relu(self.bn1(self.fc1(x)))
+        x = self.dropout(x)
+        x = F.relu(self.bn2(self.fc2(x)))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+
+# 添加LidarPointClassifier类，用于处理LiDAR点云
+class LidarPointClassifier(nn.Module):
+    """LiDAR点分类器，预测点是否属于车辆"""
+    
+    def __init__(self, input_size=7, hidden_size=64, dropout_rate=0.3):
+        super(LidarPointClassifier, self).__init__()
+        
+        # 使用Sequential结构以匹配保存的模型格式
+        self.model = nn.Sequential(
+            # model.0 - 线性层
+            nn.Linear(input_size, hidden_size),
+            # model.1 - 批归一化
+            nn.BatchNorm1d(hidden_size),
+            # model.2 - ReLU
+            nn.ReLU(),
+            # model.3 - Dropout
+            nn.Dropout(dropout_rate),
+            # model.4 - 线性层
+            nn.Linear(hidden_size, hidden_size),
+            # model.5 - 批归一化
+            nn.BatchNorm1d(hidden_size),
+            # model.6 - ReLU
+            nn.ReLU(),
+            # model.7 - Dropout
+            nn.Dropout(dropout_rate),
+            # model.8 - 输出层
+            nn.Linear(hidden_size, 2)
+        )
+    
+    def forward(self, x):
+        return self.model(x)
+
+# 添加适配carla_lidar_realtime.py中原始模型结构的类
+class LidarModelAdapter(nn.Module):
+    """兼容旧版模型结构的适配器类"""
+    
+    def __init__(self, input_size=7, hidden_size=64, dropout_rate=0.3):
+        super(LidarModelAdapter, self).__init__()
+        
+        # 创建顺序模型，与原始训练模型结构保持一致
+        self.model = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_size, 2)
+        )
+    
+    def forward(self, x):
+        return self.model(x)
+
+# 添加一个直接匹配原始模型参数名称的分类器
+class LidarOldClassifier(nn.Module):
+    """直接使用原始训练模型的参数名称结构"""
+    
+    def __init__(self, input_size=7, hidden_size=64, dropout_rate=0.3):
+        super(LidarOldClassifier, self).__init__()
+        
+        # 定义与model.0, model.1等匹配的层
+        self.fc1 = nn.Linear(input_size, hidden_size)  # model.0
+        self.bn1 = nn.BatchNorm1d(hidden_size)         # model.1
+        self.relu = nn.ReLU()                          # model.2/6
+        self.dropout = nn.Dropout(dropout_rate)        # model.3/7
+        self.fc2 = nn.Linear(hidden_size, hidden_size) # model.4
+        self.bn2 = nn.BatchNorm1d(hidden_size)         # model.5
+        self.fc3 = nn.Linear(hidden_size, 2)           # model.8
+    
+    def forward(self, x):
+        x = self.relu(self.bn1(self.fc1(x)))
+        x = self.dropout(x)
+        x = self.relu(self.bn2(self.fc2(x)))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+    
+    def load_from_sequential(self, state_dict):
+        """从Sequential模型state_dict加载权重"""
+        # 创建映射
+        mapping = {
+            'model.0.weight': 'fc1.weight',
+            'model.0.bias': 'fc1.bias',
+            'model.1.weight': 'bn1.weight',
+            'model.1.bias': 'bn1.bias',
+            'model.1.running_mean': 'bn1.running_mean',
+            'model.1.running_var': 'bn1.running_var',
+            'model.1.num_batches_tracked': 'bn1.num_batches_tracked',
+            'model.4.weight': 'fc2.weight',
+            'model.4.bias': 'fc2.bias',
+            'model.5.weight': 'bn2.weight',
+            'model.5.bias': 'bn2.bias',
+            'model.5.running_mean': 'bn2.running_mean',
+            'model.5.running_var': 'bn2.running_var',
+            'model.5.num_batches_tracked': 'bn2.num_batches_tracked',
+            'model.8.weight': 'fc3.weight',
+            'model.8.bias': 'fc3.bias'
+        }
+        
+        # 创建新的state_dict
+        new_state_dict = {}
+        for old_key, new_key in mapping.items():
+            if old_key in state_dict:
+                new_state_dict[new_key] = state_dict[old_key]
+        
+        # 加载重映射后的state_dict
+        missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
+        
+        if missing_keys:
+            print(f"Missing keys: {missing_keys}")
+        if unexpected_keys:
+            print(f"Unexpected keys: {unexpected_keys}")
+        
+        return len(missing_keys) == 0
+
+# 添加一个直接复制carla_lidar_realtime.py中模型结构的类
+class CarlaLidarModel(nn.Module):
+    """直接复制carla_lidar_realtime.py中的模型结构"""
+    
+    def __init__(self, input_size=7, hidden_size=64, dropout_rate=0.3):
+        super(CarlaLidarModel, self).__init__()
+        
+        # 完全按照carla_lidar_realtime.py中的方式定义模型
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.bn1 = nn.BatchNorm1d(hidden_size)
+        self.dropout = nn.Dropout(dropout_rate)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.bn2 = nn.BatchNorm1d(hidden_size)
+        self.fc3 = nn.Linear(hidden_size, 2)
     
     def forward(self, x):
         x = F.relu(self.bn1(self.fc1(x)))
@@ -173,6 +314,355 @@ class RadarInference:
             confidence = probabilities[0, predicted_class].item()
         
         return predicted_class, confidence
+
+# 添加LidarInference类，用于激光雷达点云车辆检测
+class LidarInference:
+    """激光雷达点云推理类，用于加载训练好的模型对点云进行车辆检测"""
+    
+    def __init__(self, model_dir):
+        """
+        初始化推理器
+        Args:
+            model_dir: 保存训练好的模型和归一化参数的目录
+        """
+        self.model_dir = model_dir
+        self.model = None
+        self.feature_mean = None
+        self.feature_std = None
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        # 加载模型和归一化参数
+        self.load_model_and_params()
+    
+    def load_model_and_params(self):
+        """加载模型和归一化参数"""
+        try:
+            # 尝试加载model_info.json
+            try:
+                with open(os.path.join(self.model_dir, 'model_info.json'), 'r') as f:
+                    model_info = json.load(f)
+                print(f"Loaded model info: {model_info}")
+            except Exception as e:
+                print(f"Warning: Unable to load model_info.json: {e}")
+                model_info = {'input_size': 7, 'hidden_size': 64, 'dropout_rate': 0.3}
+            
+            # 尝试加载normalization_params.json
+            try:
+                with open(os.path.join(self.model_dir, 'normalization_params.json'), 'r') as f:
+                    norm_params = json.load(f)
+                self.feature_mean = np.array(norm_params['mean'])
+                self.feature_std = np.array(norm_params['std'])
+                print(f"Loaded normalization parameters")
+            except Exception as e:
+                print(f"Warning: Unable to load normalization_params.json: {e}")
+                # 使用默认值
+                self.feature_mean = np.zeros(7)
+                self.feature_std = np.ones(7)
+            
+            # 创建模型
+            input_size = model_info.get('input_size', 7)
+            hidden_size = model_info.get('hidden_size', 64)
+            dropout_rate = model_info.get('dropout_rate', 0.3)
+            
+            # 尝试多种方式加载模型权重
+            model_loaded = False
+            
+            # 1. 尝试不同的模型结构
+            model_classes = [
+                # 首先尝试直接复制的carla_lidar_realtime模型结构
+                CarlaLidarModel(input_size, hidden_size, dropout_rate),
+                # 第一种结构：我们当前实现的结构
+                LidarPointClassifier(input_size, hidden_size, dropout_rate),
+                # 第二种结构：兼容旧版模型的结构
+                LidarModelAdapter(input_size, hidden_size, dropout_rate),
+                # 第三种结构：直接匹配原参数名
+                LidarOldClassifier(input_size, hidden_size, dropout_rate)
+            ]
+            
+            # 2. 尝试不同的文件名
+            model_filenames = ['best_model.pth', 'lidar_model.pth', 'model.pth', 'checkpoint.pth', 'carla_lidar_model.pth']
+            
+            # 遍历每种模型结构和文件名组合
+            for model_cls in model_classes:
+                if model_loaded:
+                    break
+                    
+                for filename in model_filenames:
+                    model_path = os.path.join(self.model_dir, filename)
+                    if not os.path.exists(model_path):
+                        continue
+                        
+                    try:
+                        # 直接加载权重
+                        model_cls.load_state_dict(torch.load(model_path, map_location=self.device))
+                        model_cls.to(self.device)
+                        model_cls.eval()
+                        self.model = model_cls
+                        print(f"LiDAR model loaded successfully with {model_cls.__class__.__name__} from: {filename}")
+                        model_loaded = True
+                        break
+                    except Exception as e:
+                        print(f"Loading {model_cls.__class__.__name__} from {filename} failed: {e}")
+                        
+                        try:
+                            # 尝试加载整个模型或state_dict
+                            loaded_data = torch.load(model_path, map_location=self.device)
+                            
+                            if isinstance(loaded_data, dict) and 'model_state_dict' in loaded_data:
+                                model_cls.load_state_dict(loaded_data['model_state_dict'])
+                                model_cls.to(self.device)
+                                model_cls.eval()
+                                self.model = model_cls
+                                print(f"LiDAR model loaded using model_state_dict from: {filename}")
+                                model_loaded = True
+                                break
+                            elif isinstance(loaded_data, dict) and 'state_dict' in loaded_data:
+                                model_cls.load_state_dict(loaded_data['state_dict'])
+                                model_cls.to(self.device)
+                                model_cls.eval()
+                                self.model = model_cls
+                                print(f"LiDAR model loaded using state_dict from: {filename}")
+                                model_loaded = True
+                                break
+                            elif isinstance(loaded_data, nn.Module):
+                                # 直接使用加载的模型
+                                self.model = loaded_data.to(self.device)
+                                self.model.eval()
+                                print(f"Loaded complete model object from: {filename}")
+                                model_loaded = True
+                                break
+                            elif isinstance(loaded_data, dict):
+                                # 尝试直接使用state_dict并转换参数名
+                                if isinstance(model_cls, LidarOldClassifier):
+                                    success = model_cls.load_from_sequential(loaded_data)
+                                    if success:
+                                        model_cls.to(self.device)
+                                        model_cls.eval()
+                                        self.model = model_cls
+                                        print(f"LiDAR model loaded using parameter remapping from: {filename}")
+                                        model_loaded = True
+                                        break
+                        except Exception as e2:
+                            print(f"Alternative loading methods failed: {e2}")
+            
+            # 3. 最后尝试直接使用加载的任何.pth文件
+            if not model_loaded:
+                # 获取目录中的所有.pth文件
+                pth_files = [f for f in os.listdir(self.model_dir) if f.endswith('.pth')]
+                for pth_file in pth_files:
+                    model_path = os.path.join(self.model_dir, pth_file)
+                    try:
+                        loaded_data = torch.load(model_path, map_location=self.device)
+                        if isinstance(loaded_data, nn.Module):
+                            self.model = loaded_data.to(self.device)
+                            self.model.eval()
+                            print(f"Loaded model as direct object from: {pth_file}")
+                            model_loaded = True
+                            break
+                    except Exception as e:
+                        print(f"Failed to load {pth_file} as model object: {e}")
+            
+            # 4. 尝试创建一个简单的默认模型（如果所有加载尝试都失败）
+            if not model_loaded:
+                print(f"Warning: Unable to load any model from: {self.model_dir}, using default model")
+                self.model = LidarPointClassifier(input_size, hidden_size, dropout_rate)
+                self.model.to(self.device)
+                self.model.eval()
+            
+            return True
+        except Exception as e:
+            print(f"Error loading LiDAR model: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def extract_features(self, point):
+        """从点云数据中提取特征"""
+        x, y, z = point.point.x, point.point.y, point.point.z
+        intensity = getattr(point, 'intensity', 1.0)
+        
+        # 计算到原点的距离
+        distance = math.sqrt(x**2 + y**2 + z**2)
+        
+        # 模拟图像坐标计算（修改映射逻辑）
+        # 假设图像中心点坐标是(400, 300)
+        center_x, center_y = 400, 300
+        scale = 5.0  # 缩放因子，根据显示需要调整
+        
+        # 并基于(0,0)点进行翻转（x和y取反）
+        px = center_x - int(x * scale)  # x轴映射到水平方向，但翻转
+        py = center_y + int(y * scale)  # y轴映射到垂直方向，但翻转
+        
+        # 归一化图像坐标
+        norm_img_x = (px - center_x) / center_x  # 归一化的x坐标
+        norm_img_y = (py - center_y) / center_y  # 归一化的y坐标
+        
+        # 检查是否有速度补偿信息
+        # 如果有速度补偿信息，则在提取的特征中考虑补偿影响
+        has_compensation = hasattr(point, 'velocity_compensation')
+        if has_compensation:
+            vx, vy, vz = point.velocity_compensation
+            
+            # 计算补偿速度的大小
+            compensation_mag = math.sqrt(vx**2 + vy**2 + vz**2)
+            
+            # 准备特征向量，包含速度补偿信息
+            features = np.array([
+                x, y, z, distance, intensity, norm_img_x, norm_img_y, compensation_mag
+            ], dtype=np.float32)
+        else:
+            # 准备标准特征向量
+            features = np.array([
+                x, y, z, distance, intensity, norm_img_x, norm_img_y
+            ], dtype=np.float32)
+        
+        return features, (x, y, z, distance)
+    
+    def predict_points(self, points_data):
+        """
+        预测多个点是否属于车辆
+        Args:
+            points_data: 激光雷达点云数据列表
+        Returns:
+            predictions: 预测结果列表
+        """
+        if self.model is None or len(points_data) == 0:
+            return []
+        
+        features_list = []
+        positions_list = []
+        has_compensation = False
+        
+        # 提取特征
+        for point in points_data:
+            try:
+                features, position_info = self.extract_features(point)
+                # 检查是否有速度补偿信息 (特征向量长度会增加)
+                if features.shape[0] > 7:
+                    has_compensation = True
+                features_list.append(features)
+                positions_list.append(position_info)
+            except Exception as e:
+                print(f"Error extracting features from point: {e}")
+                continue
+        
+        if len(features_list) == 0:
+            return []
+        
+        # 归一化特征
+        features_array = np.array(features_list)
+        
+        # 如果输入特征维度与标准化参数不匹配，则调整
+        if has_compensation and features_array.shape[1] > len(self.feature_mean):
+            # 扩展均值和标准差数组以适应补偿速度特征
+            extended_mean = np.append(self.feature_mean, [0.0])  # 假设补偿速度的均值为0
+            extended_std = np.append(self.feature_std, [1.0])   # 假设补偿速度的标准差为1
+            normalized_features = (features_array - extended_mean) / extended_std
+        else:
+            # 使用原始标准化参数
+            normalized_features = (features_array - self.feature_mean) / self.feature_std
+        
+        # 转换为PyTorch张量
+        features_tensor = torch.FloatTensor(normalized_features).to(self.device)
+        
+        # 检查模型输入维度是否与特征向量匹配
+        expected_input_size = 7  # 标准输入维度
+        if has_compensation:
+            expected_input_size = 8  # 带补偿的输入维度
+        
+        # 批量推理
+        with torch.no_grad():
+            try:
+                # 尝试直接使用当前模型
+                outputs = self.model(features_tensor)
+                probabilities = torch.softmax(outputs, dim=1)
+                predicted_classes = torch.argmax(probabilities, dim=1).cpu().numpy()
+                confidences = probabilities[:, 1].cpu().numpy()  # 获取正类(车辆)的概率
+            except Exception as e:
+                # 如果出错，可能是输入维度不匹配，尝试只使用前7个特征
+                print(f"Model inference error: {e}, trying with standard features only")
+                standard_features = normalized_features[:, :7]
+                features_tensor = torch.FloatTensor(standard_features).to(self.device)
+                outputs = self.model(features_tensor)
+                probabilities = torch.softmax(outputs, dim=1)
+                predicted_classes = torch.argmax(probabilities, dim=1).cpu().numpy()
+                confidences = probabilities[:, 1].cpu().numpy()
+        
+        # 整合预测结果
+        predictions = []
+        for i in range(len(features_list)):
+            x, y, z, distance = positions_list[i]
+            predictions.append({
+                'position': (x, y, z),
+                'distance': distance,
+                'confidence': float(confidences[i]),
+                'predicted_class': int(predicted_classes[i])
+            })
+        
+        return predictions
+    
+    def identify_vehicle_regions(self, predictions, min_points=5, min_confidence=0.6, max_distance=30):
+        """识别可能包含车辆的区域"""
+        # 过滤掉低置信度和远距离的点
+        vehicle_points = [p for p in predictions if p['predicted_class'] == 1 
+                           and p['confidence'] >= min_confidence
+                           and p['distance'] <= max_distance]
+        
+        if len(vehicle_points) < min_points:
+            return []
+        
+        # 使用简单的基于欧几里得距离的聚类方法
+        regions = []
+        processed = set()
+        
+        for i, point in enumerate(vehicle_points):
+            if i in processed:
+                continue
+            
+            # 开始一个新的聚类
+            cluster = [point]
+            processed.add(i)
+            
+            # 查找所有距离当前点足够近的点
+            for j, other_point in enumerate(vehicle_points):
+                if j in processed:
+                    continue
+                
+                # 计算3D空间中的距离
+                p1 = point['position']
+                p2 = other_point['position']
+                dist = math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2)
+                
+                if dist < 2.0:  # 小于2米距离认为是同一车辆的点
+                    cluster.append(other_point)
+                    processed.add(j)
+            
+            # 只有当聚类包含足够多的点时才认为是车辆
+            if len(cluster) >= min_points:
+                # 计算平均位置
+                avg_x = sum(p['position'][0] for p in cluster) / len(cluster)
+                avg_y = sum(p['position'][1] for p in cluster) / len(cluster)
+                avg_z = sum(p['position'][2] for p in cluster) / len(cluster)
+                
+                # 计算平均距离和置信度
+                avg_distance = sum(p['distance'] for p in cluster) / len(cluster)
+                avg_confidence = sum(p['confidence'] for p in cluster) / len(cluster)
+                
+                # 计算聚类的半径（最远点到中心的距离）
+                center = (avg_x, avg_y, avg_z)
+                radius = max(math.sqrt((p['position'][0]-center[0])**2 + 
+                                       (p['position'][1]-center[1])**2 + 
+                                       (p['position'][2]-center[2])**2) for p in cluster)
+                
+                regions.append({
+                    'center': center,
+                    'radius': radius,
+                    'points': len(cluster),
+                    'distance': avg_distance,
+                    'confidence': avg_confidence
+                })
+        
+        return regions
 
 # 添加letterbox函数，从preview_predictions.py中借鉴
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
@@ -588,9 +1078,47 @@ class RadarSensorManager(SensorManager):
         self.inference_time = 0.0
         self.tics_processed = 0
         self.detected_vehicles = 0
+        self.vehicle = None  # 附加的车辆
         
         # 调用父类构造函数
         super().__init__(world, display_man, sensor_type, transform, attached, sensor_options, display_pos, sensor_name)
+        
+        # 存储附加的车辆对象，用于获取速度
+        if attached and hasattr(attached, 'get_velocity'):
+            self.vehicle = attached
+    
+    def get_vehicle_velocity(self):
+        """获取车辆的速度向量"""
+        if self.vehicle is None:
+            return (0.0, 0.0, 0.0)
+        
+        try:
+            velocity = self.vehicle.get_velocity()
+            return (velocity.x, velocity.y, velocity.z)
+        except:
+            return (0.0, 0.0, 0.0)
+    
+    def get_velocity_projection(self, azimuth):
+        """
+        计算车辆速度在雷达探测方向上的投影
+        Args:
+            azimuth: 雷达探测的方位角
+        Returns:
+            投影速度（标量）
+        """
+        # 获取车辆速度
+        vx, vy, vz = self.get_vehicle_velocity()
+        
+        # 计算雷达方向向量
+        radar_dir_x = math.cos(azimuth)  
+        radar_dir_y = math.sin(azimuth)
+        
+        # 计算速度在雷达方向上的投影
+        # 使用点积: v_proj = v·radar_dir
+        # 注意: 投影方向与雷达探测方向相反，因此要取负
+        v_proj = -(vx * radar_dir_x + vy * radar_dir_y)
+        
+        return v_proj
     
     def save_radar_image(self, radar_data):
         """处理雷达数据并进行车辆检测"""
@@ -671,6 +1199,12 @@ class RadarSensorManager(SensorManager):
         # 添加检测结果计数
         detected_vehicle_count = 0
         
+        # 显示车辆速度信息
+        vx, vy, vz = self.get_vehicle_velocity()
+        vehicle_speed = math.sqrt(vx**2 + vy**2 + vz**2) * 3.6  # 转换为km/h
+        cv2.putText(radar_img, f"Vehicle: {vehicle_speed:.1f} km/h", (10, disp_size[1]-10), 
+                  cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+        
         # 处理每个雷达点
         for i, detect in enumerate(radar_data):
             total_points += 1
@@ -680,6 +1214,10 @@ class RadarSensorManager(SensorManager):
             azimuth = detect.azimuth
             altitude = detect.altitude
             velocity = detect.velocity
+            
+            # 计算并补偿车辆速度
+            v_proj = self.get_velocity_projection(azimuth)
+            compensated_velocity = velocity - v_proj
             
             # 应用方向偏移调整可视化方向
             adjusted_azimuth = azimuth + orientation_offset
@@ -718,7 +1256,7 @@ class RadarSensorManager(SensorManager):
                     "depth": distance,
                     "azimuth": azimuth,
                     "altitude": altitude,
-                    "velocity": velocity,
+                    "velocity": compensated_velocity,  # 使用补偿后的速度
                     "snr": snr,
                     "world_position": [world_x, world_y, world_z],
                     "image_position": [x, y]
@@ -727,13 +1265,13 @@ class RadarSensorManager(SensorManager):
                 radar_points.append(point_data)
                 
                 # 默认点颜色 - 基于速度（接近为蓝色，远离为红色）
-                if velocity > 0:  # 接近中的物体
-                    color = (0, int(255 - min(255, abs(velocity) * 10)), min(255, abs(velocity) * 25))  # 绿色到蓝色
+                if compensated_velocity > 0:  # 接近中的物体
+                    color = (0, int(255 - min(255, abs(compensated_velocity) * 10)), min(255, abs(compensated_velocity) * 25))  # 绿色到蓝色
                 else:  # 远离的物体
-                    color = (min(255, abs(velocity) * 25), int(255 - min(255, abs(velocity) * 10)), 0)  # 绿色到红色
+                    color = (min(255, abs(compensated_velocity) * 25), int(255 - min(255, abs(compensated_velocity) * 10)), 0)  # 绿色到红色
                 
                 # 默认绘制点
-                point_size = min(5, max(3, int(abs(velocity) / 5) + 2))
+                point_size = min(5, max(3, int(abs(compensated_velocity) / 5) + 2))
                 
                 # 如果有推理模型，进行车辆检测
                 if self.inference_model:
@@ -751,9 +1289,11 @@ class RadarSensorManager(SensorManager):
                             # 使用红色叉号标记检测到的车辆点
                             cv2.drawMarker(radar_img, (x, y), (0, 0, 255), cv2.MARKER_CROSS, 10, 2)
                             
-                            # 只显示置信度数值
+                            # 显示置信度数值和速度
                             cv2.putText(radar_img, f"{confidence:.2f}", (x+5, y-5), 
                                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 200, 255), 1)
+                            cv2.putText(radar_img, f"{compensated_velocity:.1f}", (x+5, y+15), 
+                                      cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
                             
                             detected_vehicle_count += 1
                         else:
@@ -772,8 +1312,8 @@ class RadarSensorManager(SensorManager):
                     cv2.circle(radar_img, (x, y), point_size, color, -1)
                 
                 # 对于速度较大的点，绘制一条表示方向和速度的线
-                if abs(velocity) > 5.0:
-                    line_length = min(15, max(5, int(abs(velocity))))
+                if abs(compensated_velocity) > 5.0:
+                    line_length = min(15, max(5, int(abs(compensated_velocity))))
                     end_x = x
                     end_y = y
                     
@@ -808,6 +1348,271 @@ class RadarSensorManager(SensorManager):
             
         t_end = self.timer.time()
         self.time_processing += (t_end-t_start)
+        self.tics_processing += 1
+
+# 添加LidarSensorManager类，用于激光雷达点云车辆检测
+class LidarSensorManager(SensorManager):
+    def __init__(self, world, display_man, sensor_type, transform, attached, sensor_options, display_pos, inference_model=None, conf_thres=0.6, sensor_name=""):
+        """
+        初始化LidarSensorManager
+        Args:
+            world: Carla世界对象
+            display_man: 显示管理器
+            sensor_type: 传感器类型
+            transform: 传感器变换
+            attached: 附加到的对象
+            sensor_options: 传感器选项
+            display_pos: 显示位置
+            inference_model: 激光雷达推理模型
+            conf_thres: 检测置信度阈值
+            sensor_name: 传感器名称
+        """
+        self.inference_model = inference_model
+        self.conf_thres = conf_thres
+        self.timer = CustomTimer()
+        self.time_processing = 0.0
+        self.tics_processing = 0
+        self.inference_time = 0.0
+        self.tics_processed = 0
+        self.detected_vehicles = 0
+        self.vehicle_regions = []
+        self.vehicle = None  # 附加的车辆
+        
+        super().__init__(world, display_man, sensor_type, transform, attached, sensor_options, display_pos, sensor_name)
+        
+        # 存储附加的车辆对象，用于获取速度
+        if attached and hasattr(attached, 'get_velocity'):
+            self.vehicle = attached
+    
+    def get_vehicle_velocity(self):
+        """获取车辆的速度向量"""
+        if self.vehicle is None:
+            return (0.0, 0.0, 0.0)
+        
+        try:
+            velocity = self.vehicle.get_velocity()
+            return (velocity.x, velocity.y, velocity.z)
+        except:
+            return (0.0, 0.0, 0.0)
+    
+    def get_velocity_compensation_for_lidar_point(self, point_x, point_y, point_z):
+        """
+        计算车辆速度在LiDAR点方向上的补偿值
+        Args:
+            point_x, point_y, point_z: 点的3D坐标
+        Returns:
+            补偿后的点和速度向量
+        """
+        # 获取车辆速度
+        vx, vy, vz = self.get_vehicle_velocity()
+        
+        # 计算点到原点的方向向量
+        distance = math.sqrt(point_x**2 + point_y**2 + point_z**2)
+        if distance < 0.001:  # 避免除以零
+            return point_x, point_y, point_z, (0.0, 0.0, 0.0)
+        
+        # 计算单位方向向量
+        dir_x = point_x / distance
+        dir_y = point_y / distance
+        dir_z = point_z / distance
+        
+        # 计算车辆速度在这个方向上的投影
+        v_proj = dir_x * vx + dir_y * vy + dir_z * vz
+        
+        # 计算投影速度向量
+        v_proj_x = v_proj * dir_x
+        v_proj_y = v_proj * dir_y
+        v_proj_z = v_proj * dir_z
+        
+        # 返回补偿后的速度向量
+        return point_x, point_y, point_z, (v_proj_x, v_proj_y, v_proj_z)
+    
+    def save_lidar_image(self, lidar_data):
+        """处理激光雷达数据并进行车辆检测"""
+        t_start = self.timer.time()
+        
+        try:
+            disp_size = self.display_man.get_display_size()
+            points = np.frombuffer(lidar_data.raw_data, dtype=np.dtype('f4'))
+            points = np.reshape(points, (int(points.shape[0] / 4), 4))
+            
+            # 准备画布
+            lidar_img = np.zeros((disp_size[1], disp_size[0], 3), dtype=np.uint8)
+            
+            # 计算中心点
+            center_x, center_y = int(disp_size[0] / 2), int(disp_size[1] / 2)
+            
+            # 绘制背景
+            cv2.circle(lidar_img, (center_x, center_y), 5, (0, 0, 255), -1)  # 中心点（车辆位置）
+            
+            # 绘制同心圆，表示距离
+            for r in range(1, 6):
+                radius = int(min(disp_size) / 12 * r)
+                cv2.circle(lidar_img, (center_x, center_y), radius, (50, 50, 50), 1)
+            
+            # 绘制坐标轴
+            cv2.line(lidar_img, (center_x, 0), (center_x, disp_size[1]), (50, 50, 50), 1)
+            cv2.line(lidar_img, (0, center_y), (disp_size[0], center_y), (50, 50, 50), 1)
+            
+            # 显示车辆速度信息
+            vx, vy, vz = self.get_vehicle_velocity()
+            vehicle_speed = math.sqrt(vx**2 + vy**2 + vz**2) * 3.6  # 转换为km/h
+            cv2.putText(lidar_img, f"Vehicle: {vehicle_speed:.1f} km/h", (10, disp_size[1]-10), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+            
+            # 获取激光雷达数据
+            # 如果有推理模型，进行车辆检测
+            if self.inference_model:
+                t_inference_start = self.timer.time()
+                
+                try:
+                    # 创建补偿车辆速度的点云数据
+                    compensated_points = []
+                    for point in lidar_data:
+                        # 获取原始点数据
+                        x, y, z = point.point.x, point.point.y, point.point.z
+                        intensity = getattr(point, 'intensity', 1.0)
+                        
+                        # 计算速度补偿
+                        _, _, _, v_proj = self.get_velocity_compensation_for_lidar_point(x, y, z)
+                        
+                        # 创建新的点，并保存原始点和补偿信息
+                        compensated_point = point
+                        compensated_point.velocity_compensation = v_proj
+                        compensated_points.append(compensated_point)
+                    
+                    # 预测所有补偿后的点
+                    predictions = self.inference_model.predict_points(compensated_points)
+                    
+                    # 识别车辆区域
+                    self.vehicle_regions = self.inference_model.identify_vehicle_regions(
+                        predictions, 
+                        min_points=5, 
+                        min_confidence=self.conf_thres,
+                        max_distance=30
+                    )
+                    self.detected_vehicles = len(self.vehicle_regions)
+                    
+                    # 绘制每个点 - 预测为车辆的点用绿色，其他点用白色
+                    for pred in predictions:
+                        if pred['predicted_class'] == 1 and pred['confidence'] >= self.conf_thres:
+                            # 计算图像上的位置
+                            scale = min(disp_size) / (2 * float(self.sensor_options.get('range', '100.0')))
+                            px = center_x - int(pred['position'][0] * scale)  # x轴映射到水平方向，但翻转
+                            py = center_y + int(pred['position'][1] * scale)  # y轴映射到垂直方向，但翻转
+                            
+                            # 确保在图像范围内
+                            if 0 <= px < disp_size[0] and 0 <= py < disp_size[1]:
+                                cv2.circle(lidar_img, (px, py), 2, (0, 255, 0), -1)  # 绿色点表示车辆
+                        else:
+                            # 计算图像上的位置
+                            scale = min(disp_size) / (2 * float(self.sensor_options.get('range', '100.0')))
+                            px = center_x - int(pred['position'][0] * scale)  # x轴映射到水平方向，但翻转
+                            py = center_y + int(pred['position'][1] * scale)  # y轴映射到垂直方向，但翻转
+                            
+                            # 确保在图像范围内
+                            if 0 <= px < disp_size[0] and 0 <= py < disp_size[1]:
+                                cv2.circle(lidar_img, (px, py), 1, (255, 255, 255), -1)  # 白色点表示非车辆
+                    
+                    # 绘制车辆区域
+                    for region in self.vehicle_regions:
+                        # 转换中心点到图像坐标
+                        scale = min(disp_size) / (2 * float(self.sensor_options.get('range', '100.0')))
+                        cx = center_x - int(region['center'][0] * scale)  # x轴映射到水平方向，但翻转
+                        cy = center_y + int(region['center'][1] * scale)  # y轴映射到垂直方向，但翻转
+                        
+                        # 转换半径到图像坐标
+                        radius_px = int(region['radius'] * scale)
+                        
+                        # 绘制圆形表示车辆区域
+                        cv2.circle(lidar_img, (cx, cy), radius_px, (0, 255, 255), 2)
+                        
+                        # 添加距离标签
+                        cv2.putText(lidar_img, f"{region['distance']:.1f}m", (cx, cy - radius_px - 5), 
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+                        
+                        # 添加置信度标签
+                        cv2.putText(lidar_img, f"{region['confidence']:.2f}", (cx, cy + radius_px + 15), 
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+                        
+                        # 添加矩形边界框
+                        x1 = cx - radius_px
+                        y1 = cy - radius_px
+                        x2 = cx + radius_px
+                        y2 = cy + radius_px
+                        cv2.rectangle(lidar_img, (x1, y1), (x2, y2), (0, 255, 255), 1)
+                
+                except Exception as e:
+                    print(f"LiDAR inference error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                
+                t_inference_end = self.timer.time()
+                self.inference_time += (t_inference_end - t_inference_start)
+                self.tics_processed += 1
+            else:
+                # 无推理模型，直接绘制点云
+                for point in points:
+                    # 激光雷达点
+                    x, y, z = point[0], point[1], point[2]
+                    intensity = point[3]
+                    
+                    # 计算到原点的距离
+                    distance = math.sqrt(x**2 + y**2 + z**2)
+                    
+                    # 计算图像上的位置
+                    scale = min(disp_size) / (2 * float(self.sensor_options.get('range', '100.0')))
+                    px = center_x - int(x * scale)  # x轴映射到水平方向，但翻转
+                    py = center_y + int(y * scale)  # y轴映射到垂直方向，但翻转
+                    
+                    # 根据高度和强度计算颜色 - 越高越亮
+                    # 将z归一化到[0,1]范围
+                    normalized_z = (z + 2) / 4  # 假设z的范围在-2到2之间
+                    normalized_z = max(0, min(1, normalized_z))  # 确保在[0,1]范围内
+                    
+                    # 将强度归一化到[0,1]范围
+                    normalized_intensity = min(1.0, intensity)
+                    
+                    # 根据高度和强度生成颜色
+                    color = (
+                        int(255 * (1 - normalized_z)),  # 蓝色分量
+                        int(255 * normalized_intensity), # 绿色分量
+                        int(255 * normalized_z)          # 红色分量
+                    )
+                    
+                    # 确保在图像范围内
+                    if 0 <= px < disp_size[0] and 0 <= py < disp_size[1]:
+                        cv2.circle(lidar_img, (px, py), 1, color, -1)
+            
+            # 添加LiDAR信息文本
+            cv2.putText(lidar_img, "LiDAR", (10, 20), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            
+            if self.inference_model:
+                # 计算并显示FPS
+                if self.tics_processed > 0:
+                    avg_inference_time = self.inference_time / self.tics_processed
+                    fps = 1.0 / max(0.001, avg_inference_time)
+                    cv2.putText(lidar_img, f"FPS: {fps:.1f}", (10, 50), 
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                
+                # 显示检测到的车辆数量
+                cv2.putText(lidar_img, f"车辆: {self.detected_vehicles}", (10, 80), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            
+            # 转换OpenCV图像（BGR）为RGB，用于pygame
+            lidar_img_rgb = cv2.cvtColor(lidar_img, cv2.COLOR_BGR2RGB)
+            
+            if self.display_man.render_enabled():
+                self.surface = pygame.surfarray.make_surface(lidar_img_rgb)
+        
+        except Exception as e:
+            print(f"LiDAR processing error: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        t_end = self.timer.time()
+        self.time_processing += (t_end - t_start)
         self.tics_processing += 1
 
 # 添加RadarOverviewManager类，用于显示雷达信息总览
@@ -923,6 +1728,7 @@ def run_simulation(args, client):
     timer = CustomTimer()
     yolo_model = None
     radar_inference = None
+    lidar_inference = None
     radar_overview = None
 
     try:
@@ -944,6 +1750,16 @@ def run_simulation(args, client):
             except Exception as e:
                 print(f"Radar inference model loading failed: {e}")
                 radar_inference = None
+        
+        # 加载LiDAR推理模型
+        if args.lidar_model:
+            print(f"Loading LiDAR inference model: {args.lidar_model}")
+            try:
+                lidar_inference = LidarInference(args.lidar_model)
+                print("LiDAR inference model loaded successfully, will be used for vehicle detection")
+            except Exception as e:
+                print(f"LiDAR inference model loading failed: {e}")
+                lidar_inference = None
         
         # 使用模块化的世界初始化函数
         world, original_settings = initialize_world(client, args)
@@ -1071,11 +1887,31 @@ def run_simulation(args, client):
         radar_overview.register_radar_sensor(rear_radar)
         
         # Third row: LiDAR and additional sensors - 使用命令行参数设置range
-        # Forward LiDAR
-        SensorManager(world, display_manager, 'LiDAR', 
-                     carla.Transform(carla.Location(x=0, z=2.4)), 
-                     vehicle, {'channels': '16', 'range': range_str, 'points_per_second': '100000', 'rotation_frequency': '20'}, 
-                     display_pos=[2, 1], sensor_name="LiDAR")
+        # LiDAR传感器选项
+        lidar_sensor_options = {
+            'channels': '16', 
+            'range': range_str, 
+            'points_per_second': '100000', 
+            'rotation_frequency': '20',
+            'upper_fov': '10',
+            'lower_fov': '-30',
+            'sensor_tick': '0.05'  # 20Hz刷新率
+        }
+        
+        # 根据是否有LiDAR推理模型来使用不同的传感器管理器
+        if lidar_inference:
+            # 使用带推理模型的LiDAR传感器管理器
+            LidarSensorManager(world, display_manager, 'LiDAR', 
+                             carla.Transform(carla.Location(x=-0.2, z=2.4)), 
+                             vehicle, lidar_sensor_options, 
+                             display_pos=[2, 1], inference_model=lidar_inference,
+                             conf_thres=args.lidar_conf_thres, sensor_name="LiDAR+Detector")
+        else:
+            # 使用原始LiDAR传感器管理器
+            SensorManager(world, display_manager, 'LiDAR', 
+                         carla.Transform(carla.Location(x=0, z=2.4)), 
+                         vehicle, lidar_sensor_options, 
+                         display_pos=[2, 1], sensor_name="LiDAR")
         
         # 添加鸟瞰图 (Bird's eye view)
         SensorManager(world, display_manager, 'RGBCamera', 
@@ -1224,6 +2060,16 @@ def main():
         type=float,
         default=0.7,
         help='Radar detection confidence threshold (default: 0.7)')
+    argparser.add_argument(
+        '--lidar-model',
+        type=str,
+        default='',
+        help='LiDAR inference model directory, containing best_model.pth and normalization_params.json')
+    argparser.add_argument(
+        '--lidar-conf-thres',
+        type=float,
+        default=0.6,
+        help='LiDAR detection confidence threshold (default: 0.6)')
 
     args = argparser.parse_args()
 
