@@ -16,6 +16,7 @@ import math
 import torch.nn as nn
 import torch.nn.functional as F
 import json
+import copy
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -498,17 +499,22 @@ class LidarInference:
         norm_img_y = (py - center_y) / center_y  # 归一化的y坐标
         
         # 检查是否有速度补偿信息
-        # 如果有速度补偿信息，则在提取的特征中考虑补偿影响
         has_compensation = hasattr(point, 'velocity_compensation')
+        
+        # 如果有速度补偿信息，将其合并到现有特征中，而不是添加新维度
         if has_compensation:
-            vx, vy, vz = point.velocity_compensation
+            v_proj_x, v_proj_y, v_proj_z = point.velocity_compensation
             
             # 计算补偿速度的大小
-            compensation_mag = math.sqrt(vx**2 + vy**2 + vz**2)
+            compensation_mag = math.sqrt(v_proj_x**2 + v_proj_y**2 + v_proj_z**2)
             
-            # 准备特征向量，包含速度补偿信息
+            # 将速度补偿信息合并到intensity中
+            # 根据补偿速度调整intensity (小幅度调整，避免过度影响)
+            adjusted_intensity = intensity * (1.0 - min(0.3, compensation_mag / 10.0))
+            
+            # 准备标准7维特征向量，但使用调整后的intensity
             features = np.array([
-                x, y, z, distance, intensity, norm_img_x, norm_img_y, compensation_mag
+                x, y, z, distance, adjusted_intensity, norm_img_x, norm_img_y
             ], dtype=np.float32)
         else:
             # 准备标准特征向量
@@ -531,15 +537,11 @@ class LidarInference:
         
         features_list = []
         positions_list = []
-        has_compensation = False
         
         # 提取特征
         for point in points_data:
             try:
                 features, position_info = self.extract_features(point)
-                # 检查是否有速度补偿信息 (特征向量长度会增加)
-                if features.shape[0] > 7:
-                    has_compensation = True
                 features_list.append(features)
                 positions_list.append(position_info)
             except Exception as e:
@@ -551,42 +553,17 @@ class LidarInference:
         
         # 归一化特征
         features_array = np.array(features_list)
-        
-        # 如果输入特征维度与标准化参数不匹配，则调整
-        if has_compensation and features_array.shape[1] > len(self.feature_mean):
-            # 扩展均值和标准差数组以适应补偿速度特征
-            extended_mean = np.append(self.feature_mean, [0.0])  # 假设补偿速度的均值为0
-            extended_std = np.append(self.feature_std, [1.0])   # 假设补偿速度的标准差为1
-            normalized_features = (features_array - extended_mean) / extended_std
-        else:
-            # 使用原始标准化参数
-            normalized_features = (features_array - self.feature_mean) / self.feature_std
+        normalized_features = (features_array - self.feature_mean) / self.feature_std
         
         # 转换为PyTorch张量
         features_tensor = torch.FloatTensor(normalized_features).to(self.device)
         
-        # 检查模型输入维度是否与特征向量匹配
-        expected_input_size = 7  # 标准输入维度
-        if has_compensation:
-            expected_input_size = 8  # 带补偿的输入维度
-        
         # 批量推理
         with torch.no_grad():
-            try:
-                # 尝试直接使用当前模型
-                outputs = self.model(features_tensor)
-                probabilities = torch.softmax(outputs, dim=1)
-                predicted_classes = torch.argmax(probabilities, dim=1).cpu().numpy()
-                confidences = probabilities[:, 1].cpu().numpy()  # 获取正类(车辆)的概率
-            except Exception as e:
-                # 如果出错，可能是输入维度不匹配，尝试只使用前7个特征
-                print(f"Model inference error: {e}, trying with standard features only")
-                standard_features = normalized_features[:, :7]
-                features_tensor = torch.FloatTensor(standard_features).to(self.device)
-                outputs = self.model(features_tensor)
-                probabilities = torch.softmax(outputs, dim=1)
-                predicted_classes = torch.argmax(probabilities, dim=1).cpu().numpy()
-                confidences = probabilities[:, 1].cpu().numpy()
+            outputs = self.model(features_tensor)
+            probabilities = torch.softmax(outputs, dim=1)
+            predicted_classes = torch.argmax(probabilities, dim=1).cpu().numpy()
+            confidences = probabilities[:, 1].cpu().numpy()  # 获取正类(车辆)的概率
         
         # 整合预测结果
         predictions = []
@@ -853,7 +830,7 @@ class YOLOSensorManager(SensorManager):
             radar_bp.set_attribute('vertical_fov', '10')
             
             # 设置雷达刷新率为10 FPS
-            radar_bp.set_attribute('sensor_tick', '0.1')
+            radar_bp.set_attribute('sensor_tick', '0.2')
             
             for key in sensor_options:
                 radar_bp.set_attribute(key, sensor_options[key])
@@ -1469,17 +1446,47 @@ class LidarSensorManager(SensorManager):
                     # 创建补偿车辆速度的点云数据
                     compensated_points = []
                     for point in lidar_data:
-                        # 获取原始点数据
-                        x, y, z = point.point.x, point.point.y, point.point.z
-                        intensity = getattr(point, 'intensity', 1.0)
-                        
-                        # 计算速度补偿
-                        _, _, _, v_proj = self.get_velocity_compensation_for_lidar_point(x, y, z)
-                        
-                        # 创建新的点，并保存原始点和补偿信息
-                        compensated_point = point
-                        compensated_point.velocity_compensation = v_proj
-                        compensated_points.append(compensated_point)
+                        try:
+                            # 获取原始点数据
+                            x, y, z = point.point.x, point.point.y, point.point.z
+                            intensity = getattr(point, 'intensity', 1.0)
+                            
+                            # 计算速度补偿
+                            _, _, _, v_proj = self.get_velocity_compensation_for_lidar_point(x, y, z)
+                            
+                            # 创建简单的点数据包装对象，而不是复制原对象
+                            # 使用Python的普通对象
+                            class SimplePoint:
+                                def __init__(self):
+                                    self.point = None
+                                    self.intensity = 0.0
+                                    self.velocity_compensation = None
+                            
+                            # 创建新对象并设置属性
+                            compensated_point = SimplePoint()
+                            
+                            # 使用简单类表示点位置
+                            class SimpleVector:
+                                def __init__(self, x, y, z):
+                                    self.x = x
+                                    self.y = y
+                                    self.z = z
+                            
+                            compensated_point.point = SimpleVector(x, y, z)
+                            compensated_point.intensity = intensity
+                            compensated_point.velocity_compensation = v_proj
+                            
+                            compensated_points.append(compensated_point)
+                        except Exception as e:
+                            print(f"Error processing point: {e}")
+                            continue
+                    
+                    # 在UI中显示是否启用速度补偿
+                    vx, vy, vz = self.get_vehicle_velocity()
+                    vehicle_speed = math.sqrt(vx**2 + vy**2 + vz**2) * 3.6  # 转换为km/h
+                    if vehicle_speed > 1.0:  # 只有速度足够大时显示
+                        cv2.putText(lidar_img, "Speed Compensation: Enabled", 
+                                  (10, disp_size[1]-30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
                     
                     # 预测所有补偿后的点
                     predictions = self.inference_model.predict_points(compensated_points)
@@ -1891,11 +1898,11 @@ def run_simulation(args, client):
         lidar_sensor_options = {
             'channels': '16', 
             'range': range_str, 
-            'points_per_second': '100000', 
+            'points_per_second': '50000',  # 减少点数量以提高性能
             'rotation_frequency': '20',
             'upper_fov': '10',
             'lower_fov': '-30',
-            'sensor_tick': '0.05'  # 20Hz刷新率
+            'sensor_tick': '0.2'  # 5Hz刷新率(限制为5fps以提高性能)
         }
         
         # 根据是否有LiDAR推理模型来使用不同的传感器管理器
