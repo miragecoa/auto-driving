@@ -114,10 +114,12 @@ class CarlaDatasetGenerator:
         self.images_dir = os.path.join(output_dir, 'images')
         self.annotations_dir = os.path.join(output_dir, 'annotations')
         self.preview_dir = os.path.join(output_dir, 'previews')  # 新增预览目录
+        self.radar_points_dir = os.path.join(output_dir, 'radar_points')  # 雷达点云数据目录
         
         os.makedirs(self.images_dir, exist_ok=True)
         os.makedirs(self.annotations_dir, exist_ok=True)
         os.makedirs(self.preview_dir, exist_ok=True)  # 创建预览目录
+        os.makedirs(self.radar_points_dir, exist_ok=True)  # 创建雷达点云目录
         
         # 数据集属性
         self.image_count = 0
@@ -127,19 +129,46 @@ class CarlaDatasetGenerator:
         
         # 设置场景
         self.vehicle = None
-        self.camera = None
-        self.image_queue = None
         
-        # 相机属性
+        # 多方向相机
+        self.camera_front = None
+        self.camera_back = None
+        self.camera_left = None
+        self.camera_right = None
+        
+        # 多方向相机数据队列
+        self.camera_front_queue = None
+        self.camera_back_queue = None
+        self.camera_left_queue = None
+        self.camera_right_queue = None
+        
+        # 雷达传感器 (四个方向)
+        self.radar_front = None
+        self.radar_back = None
+        self.radar_left = None
+        self.radar_right = None
+        
+        # 雷达数据队列
+        self.radar_front_queue = None
+        self.radar_back_queue = None
+        self.radar_left_queue = None
+        self.radar_right_queue = None
+        
+        # 传感器属性
         self.image_w = 800
         self.image_h = 600
         self.fov = 90
+        self.radar_range = 100.0  # 雷达探测范围，单位为米
+        self.radar_fov = 30.0    # 雷达视场角度
         
         # 边界框绘制
         self.edges = [[0,1], [1,3], [3,2], [2,0], [0,4], [4,5], [5,1], [5,7], [7,6], [6,4], [6,2], [7,3]]
         
         # 其他车辆列表
         self.other_vehicles = []
+        
+        # 雷达车辆命中记录
+        self.vehicle_hit_time = {}  # 记录每个车辆最近被雷达命中的时间
 
     def build_projection_matrix(self, w, h, fov, is_behind_camera=False):
         """创建相机投影矩阵"""
@@ -290,18 +319,77 @@ class CarlaDatasetGenerator:
             )
             print(f"已生成 {len(self.other_vehicles)} 辆NPC车辆")
         
-        # 生成相机
+        # 生成多方向相机
         camera_bp = self.bp_lib.find('sensor.camera.rgb')
         camera_bp.set_attribute('image_size_x', str(self.image_w))
         camera_bp.set_attribute('image_size_y', str(self.image_h))
         camera_bp.set_attribute('fov', str(self.fov))
         
-        camera_init_trans = carla.Transform(carla.Location(z=2))
-        self.camera = self.world.spawn_actor(camera_bp, camera_init_trans, attach_to=self.vehicle)
+        # 创建四个方向的相机
+        # 1. 前向相机
+        front_cam_transform = carla.Transform(carla.Location(x=2.0, z=2.0), carla.Rotation(yaw=0))
+        self.camera_front = self.world.spawn_actor(camera_bp, front_cam_transform, attach_to=self.vehicle)
         
-        # 创建队列存储传感器数据
-        self.image_queue = queue.Queue()
-        self.camera.listen(self.image_queue.put)
+        # 2. 后向相机
+        back_cam_transform = carla.Transform(carla.Location(x=-2.0, z=2.0), carla.Rotation(yaw=180))
+        self.camera_back = self.world.spawn_actor(camera_bp, back_cam_transform, attach_to=self.vehicle)
+        
+        # 3. 左向相机
+        left_cam_transform = carla.Transform(carla.Location(y=1.0, z=2.0), carla.Rotation(yaw=90))
+        self.camera_left = self.world.spawn_actor(camera_bp, left_cam_transform, attach_to=self.vehicle)
+        
+        # 4. 右向相机
+        right_cam_transform = carla.Transform(carla.Location(y=-1.0, z=2.0), carla.Rotation(yaw=270))
+        self.camera_right = self.world.spawn_actor(camera_bp, right_cam_transform, attach_to=self.vehicle)
+        
+        # 创建队列存储各个方向的相机数据
+        self.camera_front_queue = queue.Queue()
+        self.camera_back_queue = queue.Queue()
+        self.camera_left_queue = queue.Queue()
+        self.camera_right_queue = queue.Queue()
+        
+        # 设置相机数据监听
+        self.camera_front.listen(self.camera_front_queue.put)
+        self.camera_back.listen(self.camera_back_queue.put)
+        self.camera_left.listen(self.camera_left_queue.put)
+        self.camera_right.listen(self.camera_right_queue.put)
+        
+        # 初始化雷达传感器 - 与generate_radar_dataset完全一致
+        radar_bp = self.bp_lib.find('sensor.other.radar')
+        radar_bp.set_attribute('horizontal_fov', str(self.radar_fov))
+        radar_bp.set_attribute('vertical_fov', '10.0')  # 垂直视场角度
+        radar_bp.set_attribute('range', str(self.radar_range))
+        # 设置雷达点云密度
+        radar_bp.set_attribute('points_per_second', '1500')
+        
+        # 创建四个方向的雷达传感器
+        # 1. 前向雷达
+        front_radar_transform = carla.Transform(carla.Location(x=2.0, z=1.0), carla.Rotation(yaw=0))
+        self.radar_front = self.world.spawn_actor(radar_bp, front_radar_transform, attach_to=self.vehicle)
+        
+        # 2. 后向雷达
+        back_radar_transform = carla.Transform(carla.Location(x=-2.0, z=1.0), carla.Rotation(yaw=180))
+        self.radar_back = self.world.spawn_actor(radar_bp, back_radar_transform, attach_to=self.vehicle)
+        
+        # 3. 左向雷达
+        left_radar_transform = carla.Transform(carla.Location(y=1.0, z=1.0), carla.Rotation(yaw=90))
+        self.radar_left = self.world.spawn_actor(radar_bp, left_radar_transform, attach_to=self.vehicle)
+        
+        # 4. 右向雷达
+        right_radar_transform = carla.Transform(carla.Location(y=-1.0, z=1.0), carla.Rotation(yaw=270))
+        self.radar_right = self.world.spawn_actor(radar_bp, right_radar_transform, attach_to=self.vehicle)
+        
+        # 创建队列存储四个方向的雷达数据
+        self.radar_front_queue = queue.Queue()
+        self.radar_back_queue = queue.Queue()
+        self.radar_left_queue = queue.Queue()
+        self.radar_right_queue = queue.Queue()
+        
+        # 设置雷达监听
+        self.radar_front.listen(self.radar_front_queue.put)
+        self.radar_back.listen(self.radar_back_queue.put)
+        self.radar_left.listen(self.radar_left_queue.put)
+        self.radar_right.listen(self.radar_right_queue.put)
         
         # 获取交通管理器以进行额外的车辆设置
         traffic_manager = self.client.get_trafficmanager(8000)
@@ -324,11 +412,22 @@ class CarlaDatasetGenerator:
                 
         print("场景初始化完成")
 
-    def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50, skip_empty_frames=False):
-        """生成数据集"""
+    def generate_dataset(self, num_frames=100, capture_interval=5, show_3d_bbox=False, detection_range=50, skip_empty_frames=False, hit_tolerance=5, radar_hit_timeout=2.0):
+        """生成数据集
+        
+        参数:
+            num_frames: 要生成的帧数
+            capture_interval: 帧捕获间隔，单位为秒
+            show_3d_bbox: 是否显示3D边界框
+            detection_range: 车辆检测范围，单位为米
+            skip_empty_frames: 是否跳过无车辆的帧
+            hit_tolerance: 雷达命中检测的容忍像素范围
+            radar_hit_timeout: 雷达命中超时时间，单位为秒，超过此时间未命中则不标记
+        """
         print(f"开始生成数据集：目标帧数 {num_frames}，采集间隔 {capture_interval} 秒")
         print(f"图像尺寸: {self.image_w}x{self.image_h}，检测范围: {detection_range}米")
         print(f"显示3D边界框: {'是' if show_3d_bbox else '否'}")
+        print(f"雷达命中检测: 命中容忍范围 {hit_tolerance} 像素，命中超时 {radar_hit_timeout} 秒")
         print("已启用边界框重叠过滤: 当一个边界框完全包含另一个时，只保留较大的边界框")
         
         if skip_empty_frames:
@@ -340,6 +439,7 @@ class CarlaDatasetGenerator:
         os.makedirs(self.images_dir, exist_ok=True)
         os.makedirs(self.annotations_dir, exist_ok=True)
         os.makedirs(self.preview_dir, exist_ok=True)
+        os.makedirs(self.radar_points_dir, exist_ok=True)
         
         # 检查已存在的图像文件，确定起始的image_count
         existing_images = [f for f in os.listdir(self.images_dir) if f.endswith('.png') or f.endswith('.jpg')]
@@ -371,21 +471,76 @@ class CarlaDatasetGenerator:
         frames_skipped = 0  # 新增：记录因无车辆而跳过的帧数
         start_time = time.time()
         
+        # 创建四个预览窗口
+        cv2.namedWindow('Front View', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Back View', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Left View', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Right View', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Radar View', cv2.WINDOW_NORMAL)
+        
+        # 调整预览窗口大小
+        cv2.resizeWindow('Front View', int(self.image_w * 0.7), int(self.image_h * 0.7))
+        cv2.resizeWindow('Back View', int(self.image_w * 0.7), int(self.image_h * 0.7))
+        cv2.resizeWindow('Left View', int(self.image_w * 0.7), int(self.image_h * 0.7))
+        cv2.resizeWindow('Right View', int(self.image_w * 0.7), int(self.image_h * 0.7))
+        cv2.resizeWindow('Radar View', int(self.image_w * 0.7), int(self.image_h * 0.7))
+        
+        # 调整窗口位置以便同时显示所有窗口
+        cv2.moveWindow('Front View', 0, 0)
+        cv2.moveWindow('Back View', self.image_w, 0)
+        cv2.moveWindow('Left View', 0, self.image_h)
+        cv2.moveWindow('Right View', self.image_w, self.image_h)
+        cv2.moveWindow('Radar View', int(self.image_w * 1.5), 0)
+        
         while frames_processed < num_frames:
             try:
-                # 检索图像
+                # 刷新世界
                 self.world.tick()
-                carla_image = self.image_queue.get()
                 
-                # 获取相机到世界的矩阵
-                world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
+                # 获取雷达数据
+                radar_img, radar_points = self.merge_radar_data()
                 
-                # 转换图像为NumPy数组用于显示 - 保留一个干净的副本
-                img_clean = np.reshape(np.copy(carla_image.raw_data), (carla_image.height, carla_image.width, 4))
-                img_display = img_clean.copy()  # 用于显示和处理的副本
+                if radar_img is None or radar_points is None:
+                    print("无法获取雷达数据，跳过当前帧")
+                    continue
                 
-                # 要渲染的边界框列表
-                bboxes_to_render = []
+                # 检索四个方向的相机图像
+                try:
+                    camera_front_img = self.camera_front_queue.get(timeout=2.0)
+                    camera_back_img = self.camera_back_queue.get(timeout=2.0)
+                    camera_left_img = self.camera_left_queue.get(timeout=2.0)
+                    camera_right_img = self.camera_right_queue.get(timeout=2.0)
+                except queue.Empty:
+                    print("相机数据获取超时，跳过当前帧")
+                    continue
+                
+                # 获取各个相机的转换矩阵
+                world_2_camera_front = np.array(self.camera_front.get_transform().get_inverse_matrix())
+                world_2_camera_back = np.array(self.camera_back.get_transform().get_inverse_matrix())
+                world_2_camera_left = np.array(self.camera_left.get_transform().get_inverse_matrix())
+                world_2_camera_right = np.array(self.camera_right.get_transform().get_inverse_matrix())
+                
+                # 转换图像为NumPy数组用于显示
+                img_front = np.reshape(np.copy(camera_front_img.raw_data), (camera_front_img.height, camera_front_img.width, 4))
+                img_back = np.reshape(np.copy(camera_back_img.raw_data), (camera_back_img.height, camera_back_img.width, 4))
+                img_left = np.reshape(np.copy(camera_left_img.raw_data), (camera_left_img.height, camera_left_img.width, 4))
+                img_right = np.reshape(np.copy(camera_right_img.raw_data), (camera_right_img.height, camera_right_img.width, 4))
+                
+                # 创建工作副本用于显示和处理
+                img_front_display = img_front.copy()
+                img_back_display = img_back.copy()
+                img_left_display = img_left.copy()
+                img_right_display = img_right.copy()
+                radar_display = radar_img.copy()
+                
+                # 创建要渲染的边界框列表（四个相机方向）
+                bboxes_front = []
+                bboxes_back = []
+                bboxes_left = []
+                bboxes_right = []
+                
+                # 获取当前时间，用于雷达命中检测
+                current_time = time.time()
                 
                 # 处理场景中的所有车辆
                 for npc in self.world.get_actors().filter('*vehicle*'):
@@ -397,12 +552,13 @@ class CarlaDatasetGenerator:
                             
                             # 过滤出指定范围内的车辆
                             if dist < detection_range:
-                                # 计算主车前向向量与主车到其他车辆的向量的点积
-                                # 我们将这个点积限制为仅在相机前方绘制边界框
-                                forward_vec = self.vehicle.get_transform().get_forward_vector()
-                                ray = npc.get_transform().location - self.vehicle.get_transform().location
+                                # 检查雷达是否命中该车辆
+                                vehicle_hit_by_radar = False
                                 
-                                # 使用自定义点积函数而不是.dot()方法
+                                # 处理前方相机 - 判断是否在前方视野中
+                                forward_vec = self.camera_front.get_transform().get_forward_vector()
+                                ray = npc.get_transform().location - self.camera_front.get_transform().location
+                                
                                 if self.dot_product(forward_vec, ray) > 0:
                                     # 渲染3D边界框
                                     verts = [v for v in bb.get_world_vertices(npc.get_transform())]
@@ -414,7 +570,7 @@ class CarlaDatasetGenerator:
                                     y_min = 10000
                                     
                                     for vert in verts:
-                                        p = self.get_image_point(vert, K, world_2_camera)
+                                        p = self.get_image_point(vert, K, world_2_camera_front)
                                         # 找出最右侧的顶点
                                         if p[0] > x_max:
                                             x_max = p[0]
@@ -430,138 +586,374 @@ class CarlaDatasetGenerator:
                                     
                                     # 确保边界框在图像内部
                                     if x_min > 0 and x_max < 1.5*self.image_w and y_min > 0 and y_max < 1.5*self.image_h:
-                                        # 存储边界框信息供保存时使用
-                                        bboxes_to_render.append({
-                                            "vehicle_id": npc.id,
-                                            "bbox": [int(x_min), int(y_min), int(x_max), int(y_max)]
-                                        })
+                                        # 检查雷达是否命中该车辆
+                                        for point in radar_points:
+                                            # 更新雷达命中状态
+                                            if ((x_min-hit_tolerance) <= point['x'] <= (x_max+hit_tolerance) and 
+                                                (y_min-hit_tolerance) <= point['y'] <= (y_max+hit_tolerance)):
+                                                vehicle_hit_by_radar = True
+                                                point['hit_vehicle_id'] = npc.id
+                                                point['is_hitting_vehicle'] = True
+                                                # 更新最近命中时间
+                                                self.vehicle_hit_time[npc.id] = current_time
+                                                break
+                                                
+                                        # 检查时间窗口内是否有雷达命中
+                                        radar_hit_valid = npc.id in self.vehicle_hit_time and (current_time - self.vehicle_hit_time[npc.id]) <= radar_hit_timeout
                                         
-                                        # 在这里绘制3D边界框（如果需要）
-                                        if show_3d_bbox:
-                                            for edge in self.edges:
-                                                p1 = self.get_image_point(verts[edge[0]], K, world_2_camera)
-                                                p2 = self.get_image_point(verts[edge[1]], K, world_2_camera)
-                                                if self.point_in_canvas(p1, self.image_h, self.image_w) and self.point_in_canvas(p2, self.image_h, self.image_w):
-                                                    cv2.line(img_display, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                        # 只有在雷达命中有效时才存储边界框信息
+                                        if radar_hit_valid:
+                                            bboxes_front.append({
+                                                "vehicle_id": npc.id,
+                                                "bbox": [int(x_min), int(y_min), int(x_max), int(y_max)]
+                                            })
+                                            
+                                            # 在这里绘制3D边界框（如果需要）
+                                            if show_3d_bbox:
+                                                for edge in self.edges:
+                                                    p1 = self.get_image_point(verts[edge[0]], K, world_2_camera_front)
+                                                    p2 = self.get_image_point(verts[edge[1]], K, world_2_camera_front)
+                                                    if self.point_in_canvas(p1, self.image_h, self.image_w) and self.point_in_canvas(p2, self.image_h, self.image_w):
+                                                        cv2.line(img_front_display, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                
+                                # 处理后方相机 - 判断是否在后方视野中
+                                backward_vec = self.camera_back.get_transform().get_forward_vector()
+                                ray = npc.get_transform().location - self.camera_back.get_transform().location
+                                
+                                if self.dot_product(backward_vec, ray) > 0:
+                                    # 处理后方相机逻辑，类似于前方相机
+                                    verts = [v for v in bb.get_world_vertices(npc.get_transform())]
+                                    
+                                    # 找出2D边界框的极值
+                                    x_max = -10000
+                                    x_min = 10000
+                                    y_max = -10000
+                                    y_min = 10000
+                                    
+                                    for vert in verts:
+                                        p = self.get_image_point(vert, K, world_2_camera_back)
+                                        if p[0] > x_max: x_max = p[0]
+                                        if p[0] < x_min: x_min = p[0]
+                                        if p[1] > y_max: y_max = p[1]
+                                        if p[1] < y_min: y_min = p[1]
+                                    
+                                    # 确保边界框在图像内部
+                                    if x_min > 0 and x_max < 1.5*self.image_w and y_min > 0 and y_max < 1.5*self.image_h:
+                                        # 检查雷达是否命中该车辆
+                                        for point in radar_points:
+                                            # 更新雷达命中状态
+                                            if ((x_min-hit_tolerance) <= point['x'] <= (x_max+hit_tolerance) and 
+                                                (y_min-hit_tolerance) <= point['y'] <= (y_max+hit_tolerance)):
+                                                vehicle_hit_by_radar = True
+                                                point['hit_vehicle_id'] = npc.id
+                                                point['is_hitting_vehicle'] = True
+                                                # 更新最近命中时间
+                                                self.vehicle_hit_time[npc.id] = current_time
+                                                break
+                                        
+                                        # 检查时间窗口内是否有雷达命中
+                                        radar_hit_valid = npc.id in self.vehicle_hit_time and (current_time - self.vehicle_hit_time[npc.id]) <= radar_hit_timeout
+                                        
+                                        # 只有在雷达命中有效时才存储边界框信息
+                                        if radar_hit_valid:
+                                            bboxes_back.append({
+                                                "vehicle_id": npc.id,
+                                                "bbox": [int(x_min), int(y_min), int(x_max), int(y_max)]
+                                            })
+                                            
+                                            # 在这里绘制3D边界框（如果需要）
+                                            if show_3d_bbox:
+                                                for edge in self.edges:
+                                                    p1 = self.get_image_point(verts[edge[0]], K, world_2_camera_back)
+                                                    p2 = self.get_image_point(verts[edge[1]], K, world_2_camera_back)
+                                                    if self.point_in_canvas(p1, self.image_h, self.image_w) and self.point_in_canvas(p2, self.image_h, self.image_w):
+                                                        cv2.line(img_back_display, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                
+                                # 处理左方相机 - 判断是否在左方视野中
+                                left_vec = self.camera_left.get_transform().get_forward_vector()
+                                ray = npc.get_transform().location - self.camera_left.get_transform().location
+                                
+                                if self.dot_product(left_vec, ray) > 0:
+                                    # 处理左方相机逻辑
+                                    verts = [v for v in bb.get_world_vertices(npc.get_transform())]
+                                    
+                                    # 找出2D边界框的极值
+                                    x_max = -10000
+                                    x_min = 10000
+                                    y_max = -10000
+                                    y_min = 10000
+                                    
+                                    for vert in verts:
+                                        p = self.get_image_point(vert, K, world_2_camera_left)
+                                        if p[0] > x_max: x_max = p[0]
+                                        if p[0] < x_min: x_min = p[0]
+                                        if p[1] > y_max: y_max = p[1]
+                                        if p[1] < y_min: y_min = p[1]
+                                    
+                                    # 确保边界框在图像内部
+                                    if x_min > 0 and x_max < 1.5*self.image_w and y_min > 0 and y_max < 1.5*self.image_h:
+                                        # 检查雷达是否命中该车辆
+                                        for point in radar_points:
+                                            # 更新雷达命中状态
+                                            if ((x_min-hit_tolerance) <= point['x'] <= (x_max+hit_tolerance) and 
+                                                (y_min-hit_tolerance) <= point['y'] <= (y_max+hit_tolerance)):
+                                                vehicle_hit_by_radar = True
+                                                point['hit_vehicle_id'] = npc.id
+                                                point['is_hitting_vehicle'] = True
+                                                # 更新最近命中时间
+                                                self.vehicle_hit_time[npc.id] = current_time
+                                                break
+                                        
+                                        # 检查时间窗口内是否有雷达命中
+                                        radar_hit_valid = npc.id in self.vehicle_hit_time and (current_time - self.vehicle_hit_time[npc.id]) <= radar_hit_timeout
+                                        
+                                        # 只有在雷达命中有效时才存储边界框信息
+                                        if radar_hit_valid:
+                                            bboxes_left.append({
+                                                "vehicle_id": npc.id,
+                                                "bbox": [int(x_min), int(y_min), int(x_max), int(y_max)]
+                                            })
+                                            
+                                            # 在这里绘制3D边界框（如果需要）
+                                            if show_3d_bbox:
+                                                for edge in self.edges:
+                                                    p1 = self.get_image_point(verts[edge[0]], K, world_2_camera_left)
+                                                    p2 = self.get_image_point(verts[edge[1]], K, world_2_camera_left)
+                                                    if self.point_in_canvas(p1, self.image_h, self.image_w) and self.point_in_canvas(p2, self.image_h, self.image_w):
+                                                        cv2.line(img_left_display, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                
+                                # 处理右方相机 - 判断是否在右方视野中
+                                right_vec = self.camera_right.get_transform().get_forward_vector()
+                                ray = npc.get_transform().location - self.camera_right.get_transform().location
+                                
+                                if self.dot_product(right_vec, ray) > 0:
+                                    # 处理右方相机逻辑
+                                    verts = [v for v in bb.get_world_vertices(npc.get_transform())]
+                                    
+                                    # 找出2D边界框的极值
+                                    x_max = -10000
+                                    x_min = 10000
+                                    y_max = -10000
+                                    y_min = 10000
+                                    
+                                    for vert in verts:
+                                        p = self.get_image_point(vert, K, world_2_camera_right)
+                                        if p[0] > x_max: x_max = p[0]
+                                        if p[0] < x_min: x_min = p[0]
+                                        if p[1] > y_max: y_max = p[1]
+                                        if p[1] < y_min: y_min = p[1]
+                                    
+                                    # 确保边界框在图像内部
+                                    if x_min > 0 and x_max < 1.5*self.image_w and y_min > 0 and y_max < 1.5*self.image_h:
+                                        # 检查雷达是否命中该车辆
+                                        for point in radar_points:
+                                            # 更新雷达命中状态
+                                            if ((x_min-hit_tolerance) <= point['x'] <= (x_max+hit_tolerance) and 
+                                                (y_min-hit_tolerance) <= point['y'] <= (y_max+hit_tolerance)):
+                                                vehicle_hit_by_radar = True
+                                                point['hit_vehicle_id'] = npc.id
+                                                point['is_hitting_vehicle'] = True
+                                                # 更新最近命中时间
+                                                self.vehicle_hit_time[npc.id] = current_time
+                                                break
+                                        
+                                        # 检查时间窗口内是否有雷达命中
+                                        radar_hit_valid = npc.id in self.vehicle_hit_time and (current_time - self.vehicle_hit_time[npc.id]) <= radar_hit_timeout
+                                        
+                                        # 只有在雷达命中有效时才存储边界框信息
+                                        if radar_hit_valid:
+                                            bboxes_right.append({
+                                                "vehicle_id": npc.id,
+                                                "bbox": [int(x_min), int(y_min), int(x_max), int(y_max)]
+                                            })
+                                            
+                                            # 在这里绘制3D边界框（如果需要）
+                                            if show_3d_bbox:
+                                                for edge in self.edges:
+                                                    p1 = self.get_image_point(verts[edge[0]], K, world_2_camera_right)
+                                                    p2 = self.get_image_point(verts[edge[1]], K, world_2_camera_right)
+                                                    if self.point_in_canvas(p1, self.image_h, self.image_w) and self.point_in_canvas(p2, self.image_h, self.image_w):
+                                                        cv2.line(img_right_display, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                        
                         except Exception as e:
                             print(f"处理车辆 {npc.id} 时出错: {e}")
                             continue
                 
                 # 过滤掉被完全包含的边界框
-                filtered_bboxes = self.filter_contained_bboxes(bboxes_to_render)
+                filtered_bboxes_front = self.filter_contained_bboxes(bboxes_front)
+                filtered_bboxes_back = self.filter_contained_bboxes(bboxes_back)
+                filtered_bboxes_left = self.filter_contained_bboxes(bboxes_left)
+                filtered_bboxes_right = self.filter_contained_bboxes(bboxes_right)
                 
-                # 只绘制过滤后的边界框
-                for bbox_info in filtered_bboxes:
+                # 绘制雷达点
+                for point in radar_points:
+                    # 如果是击中车辆的点，使用红色
+                    if point['is_hitting_vehicle']:
+                        cv2.circle(radar_display, (point['x'], point['y']), 5, (0, 0, 255), -1)
+                
+                # 绘制四个方向的边界框
+                for bbox_info in filtered_bboxes_front:
                     x_min, y_min, x_max, y_max = bbox_info["bbox"]
-                    # 绘制2D边界框
-                    cv2.rectangle(img_display, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 0, 255, 255), 1)
+                    cv2.rectangle(img_front_display, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 0, 255, 255), 1)
+                
+                for bbox_info in filtered_bboxes_back:
+                    x_min, y_min, x_max, y_max = bbox_info["bbox"]
+                    cv2.rectangle(img_back_display, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 0, 255, 255), 1)
+                
+                for bbox_info in filtered_bboxes_left:
+                    x_min, y_min, x_max, y_max = bbox_info["bbox"]
+                    cv2.rectangle(img_left_display, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 0, 255, 255), 1)
+                
+                for bbox_info in filtered_bboxes_right:
+                    x_min, y_min, x_max, y_max = bbox_info["bbox"]
+                    cv2.rectangle(img_right_display, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 0, 255, 255), 1)
                 
                 # 显示图像
-                display_img = cv2.cvtColor(img_display, cv2.COLOR_BGRA2BGR)
-                cv2.putText(display_img, f"Frames: {frames_processed}/{num_frames}", (10, 30), 
+                # 转换BGRA到BGR用于显示
+                display_front = cv2.cvtColor(img_front_display, cv2.COLOR_BGRA2BGR)
+                display_back = cv2.cvtColor(img_back_display, cv2.COLOR_BGRA2BGR)
+                display_left = cv2.cvtColor(img_left_display, cv2.COLOR_BGRA2BGR)
+                display_right = cv2.cvtColor(img_right_display, cv2.COLOR_BGRA2BGR)
+                
+                # 添加状态信息
+                cv2.putText(display_front, f"Front View: {len(filtered_bboxes_front)} vehicles", (10, 30), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                # 显示下次采集倒计时
+                cv2.putText(display_back, f"Back View: {len(filtered_bboxes_back)} vehicles", (10, 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                cv2.putText(display_left, f"Left View: {len(filtered_bboxes_left)} vehicles", (10, 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                cv2.putText(display_right, f"Right View: {len(filtered_bboxes_right)} vehicles", (10, 30), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                
+                # 显示倒计时
                 time_to_next = max(0, capture_interval - (time.time() - last_capture_time))
-                cv2.putText(display_img, f"Next capture: {time_to_next:.1f}s", (10, 60), 
+                cv2.putText(radar_display, f"Next Capture: {time_to_next:.1f}s", (10, 30), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                # 显示检测到的车辆数量 - 使用过滤后的边界框数量
-                cv2.putText(display_img, f"Vehicles detected: {len(filtered_bboxes)}", (10, 90), 
+                cv2.putText(radar_display, f"Radar Points: {len(radar_points)}", (10, 60), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                cv2.imshow('CARLA Vehicle Dataset', display_img)
+                cv2.putText(radar_display, f"Vehicles Hit: {sum(1 for p in radar_points if p['is_hitting_vehicle'])}", (10, 90), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                
+                # 显示所有窗口
+                cv2.imshow('Front View', display_front)
+                cv2.imshow('Back View', display_back)
+                cv2.imshow('Left View', display_left)
+                cv2.imshow('Right View', display_right)
+                cv2.imshow('Radar View', radar_display)
                 
                 # 每隔capture_interval秒采集一次数据
-                current_time = time.time()
-                if current_time - last_capture_time >= capture_interval:
+                current_capture_time = time.time()
+                if current_capture_time - last_capture_time >= capture_interval:
                     try:
-                        # 首先检查是否检测到了车辆，如果启用了空帧过滤，则跳过无车辆帧
-                        if skip_empty_frames and not filtered_bboxes:
+                        # 首先检查是否所有方向都检测到了车辆，如果启用了空帧过滤，则跳过无车辆帧
+                        total_vehicles = len(filtered_bboxes_front) + len(filtered_bboxes_back) + len(filtered_bboxes_left) + len(filtered_bboxes_right)
+                        
+                        if skip_empty_frames and total_vehicles == 0:
                             frames_skipped += 1
-                            print(f"当前帧未检测到车辆，跳过保存 (已跳过: {frames_skipped} 帧)")
-                            last_capture_time = current_time
+                            print(f"当前帧未检测到雷达命中的车辆，跳过保存 (已跳过: {frames_skipped} 帧)")
+                            last_capture_time = current_capture_time
                             # 继续处理下一帧，不计入已处理帧数
                             continue
                         
                         # 获取可用的图像ID，确保不覆盖现有文件
                         frame_id = self.image_count
-                        img_filename = f'{frame_id:06d}.png'
-                        img_path = os.path.join(self.images_dir, img_filename)
                         
-                        # 检查文件是否已存在，如果存在则增加ID直到找到未使用的
-                        while os.path.exists(img_path):
-                            frame_id += 1
-                            img_filename = f'{frame_id:06d}.png'
-                            img_path = os.path.join(self.images_dir, img_filename)
-                        
-                        # 如果frame_id与原始self.image_count不同，更新并提示用户
-                        if frame_id != self.image_count:
-                            print(f"跳过已存在的文件名，使用新ID: {frame_id}")
-                            self.image_count = frame_id
-                        
+                        # 获取当前时间戳
                         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         
-                        # 保存图像
-                        carla_image.save_to_disk(img_path)
+                        # 为四个方向分别保存图像和标注
+                        directions = ["front", "back", "left", "right"]
+                        cameras = [self.camera_front, self.camera_back, self.camera_left, self.camera_right]
+                        images = [camera_front_img, camera_back_img, camera_left_img, camera_right_img]
+                        bboxes_list = [filtered_bboxes_front, filtered_bboxes_back, filtered_bboxes_left, filtered_bboxes_right]
+                        display_images = [display_front, display_back, display_left, display_right]
                         
-                        # 保存带有边界框标记的预览图像
-                        preview_img = display_img.copy()  # 使用已处理好的显示图像
-                        # 添加额外信息到预览图像
-                        cv2.putText(preview_img, f"Vehicles: {len(filtered_bboxes)}", (10, 90), 
-                                  cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                        
-                        # 在预览图像中为每个边界框添加ID标签 - 使用过滤后的边界框
-                        for i, bbox_info in enumerate(filtered_bboxes):
-                            x_min, y_min, x_max, y_max = bbox_info["bbox"]
-                            # 在边界框上方显示编号
-                            cv2.putText(preview_img, f"V{i+1}", (int(x_min), int(y_min) - 5), 
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
-                        
-                        # 保存预览图像，使用与原始图像相同的文件名
-                        preview_path = os.path.join(self.preview_dir, img_filename)
-                        
-                        # 直接使用相同的文件名保存预览图，不需要检查是否存在
-                        # 因为图像ID已经确保唯一性，所以预览图也会使用唯一的文件名
-                        cv2.imwrite(preview_path, preview_img)
-                        
-                        # 创建VOC标注writer
-                        voc_writer = Writer(img_path, self.image_w, self.image_h)
-                        
-                        # 添加到COCO图像列表
-                        self.coco_images.append({
-                            "license": 1,
-                            "file_name": img_filename,
-                            "height": self.image_h,
-                            "width": self.image_w,
-                            "date_captured": timestamp,
-                            "id": frame_id
-                        })
-                        
-                        # 处理边界框 - 使用过滤后的边界框
-                        for bbox_info in filtered_bboxes:
-                            x_min, y_min, x_max, y_max = bbox_info["bbox"]
+                        for i, direction in enumerate(directions):
+                            img_filename = f'{frame_id:06d}_{direction}.png'
+                            img_path = os.path.join(self.images_dir, img_filename)
                             
-                            # 添加到VOC标注
-                            voc_writer.addObject('vehicle', x_min, y_min, x_max, y_max)
+                            # 保存图像
+                            images[i].save_to_disk(img_path)
                             
-                            # 添加到COCO标注
-                            self.coco_annotations.append({
-                                "id": self.annotation_id,
-                                "image_id": frame_id,
-                                "category_id": 1,  # 1 表示车辆
-                                "bbox": [float(x_min), float(y_min), float(x_max - x_min), float(y_max - y_min)],
-                                "area": float((x_max - x_min) * (y_max - y_min)),
-                                "segmentation": [],
-                                "iscrowd": 0
+                            # 保存带有边界框标记的预览图像
+                            preview_path = os.path.join(self.preview_dir, img_filename)
+                            cv2.imwrite(preview_path, display_images[i])
+                            
+                            # 创建VOC标注writer
+                            voc_writer = Writer(img_path, self.image_w, self.image_h)
+                            
+                            # 添加到COCO图像列表
+                            self.coco_images.append({
+                                "license": 1,
+                                "file_name": img_filename,
+                                "height": self.image_h,
+                                "width": self.image_w,
+                                "date_captured": timestamp,
+                                "id": frame_id * 10 + i,
+                                "direction": direction
                             })
-                            self.annotation_id += 1
+                            
+                            # 处理边界框
+                            for bbox_info in bboxes_list[i]:
+                                x_min, y_min, x_max, y_max = bbox_info["bbox"]
+                                
+                                # 添加到VOC标注
+                                voc_writer.addObject('vehicle', x_min, y_min, x_max, y_max)
+                                
+                                # 添加到COCO标注
+                                self.coco_annotations.append({
+                                    "id": self.annotation_id,
+                                    "image_id": frame_id * 10 + i,
+                                    "category_id": 1,  # 1 表示车辆
+                                    "bbox": [float(x_min), float(y_min), float(x_max - x_min), float(y_max - y_min)],
+                                    "area": float((x_max - x_min) * (y_max - y_min)),
+                                    "segmentation": [],
+                                    "iscrowd": 0,
+                                    "direction": direction,
+                                    "vehicle_id": bbox_info["vehicle_id"]
+                                })
+                                self.annotation_id += 1
+                            
+                            # 保存VOC格式标注
+                            voc_path = os.path.join(self.annotations_dir, f'{frame_id:06d}_{direction}.xml')
+                            voc_writer.save(voc_path)
                         
-                        # 保存VOC格式标注
-                        voc_path = os.path.join(self.annotations_dir, f'{frame_id:06d}.xml')
-                        voc_writer.save(voc_path)
+                        # 保存雷达点云数据
+                        radar_data = {
+                            "frame_id": frame_id,
+                            "timestamp": timestamp,
+                            "total_points": len(radar_points),
+                            "vehicle_count": total_vehicles,
+                            "points": []
+                        }
                         
-                        self.image_count += 1  # 更新图像计数
+                        # 将每个雷达点的信息添加到数据中
+                        for point in radar_points:
+                            radar_data["points"].append({
+                                "id": point["id"],
+                                "direction": point["direction"],  # 雷达方向
+                                "depth": point["depth"],
+                                "azimuth": point["azimuth"],
+                                "altitude": point["altitude"],
+                                "velocity": point["velocity"],
+                                "snr": point["snr"],
+                                "world_position": point["world_position"],
+                                "image_position": [point["x"], point["y"]],
+                                "hit_vehicle_id": point["hit_vehicle_id"],
+                                "is_hitting_vehicle": point["is_hitting_vehicle"]
+                            })
+                        
+                        # 保存雷达点云数据为JSON文件
+                        radar_path = os.path.join(self.radar_points_dir, f'{frame_id:06d}.json')
+                        with open(radar_path, 'w') as f:
+                            json.dump(radar_data, f, indent=2)
+                        
+                        # 更新图像计数和计时器
+                        self.image_count += 1
                         frames_processed += 1
-                        last_capture_time = current_time
+                        last_capture_time = current_capture_time
                         
+                        # 计算剩余时间并显示进度
                         elapsed_time = time.time() - start_time
                         remaining_time = (elapsed_time / frames_processed) * (num_frames - frames_processed) if frames_processed > 0 else 0
                         status_msg = f'已采集: {frames_processed}/{num_frames} 帧 ({frames_processed/num_frames*100:.1f}%), '
@@ -570,10 +962,11 @@ class CarlaDatasetGenerator:
                         status_msg += f'下一帧将在 {capture_interval} 秒后采集'
                         print(status_msg)
                         print(f'预计剩余时间: {int(remaining_time//60)}分{int(remaining_time%60)}秒')
+                        
                     except Exception as e:
                         print(f"保存数据帧时出错: {e}")
                         # 继续尝试下一帧，而不是直接中断数据集生成
-                        last_capture_time = current_time
+                        last_capture_time = current_capture_time
                 
                 # 按'q'键退出
                 if cv2.waitKey(1) == ord('q'):
@@ -584,7 +977,7 @@ class CarlaDatasetGenerator:
                 # 短暂等待后继续尝试
                 time.sleep(0.1)
         
-        # 关闭显示窗口
+        # 关闭所有显示窗口
         cv2.destroyAllWindows()
         
         # 保存COCO格式数据集
@@ -593,7 +986,7 @@ class CarlaDatasetGenerator:
         
         # 打印数据集统计信息
         print(f"\n数据集生成统计:")
-        print(f"- 总共采集图像: {self.image_count} 帧")
+        print(f"- 总共采集图像: {self.image_count * 4} 帧 (4个方向)")
         print(f"- 总共标注对象: {self.annotation_id} 个")
         print(f"- 数据集保存路径: {os.path.abspath(self.output_dir)}")
         
@@ -641,9 +1034,26 @@ class CarlaDatasetGenerator:
         if self.original_settings:
             self.world.apply_settings(self.original_settings)
         
-        # 销毁传感器
-        if self.camera:
-            self.camera.destroy()
+        # 销毁所有传感器
+        # 相机
+        if self.camera_front:
+            self.camera_front.destroy()
+        if self.camera_back:
+            self.camera_back.destroy()
+        if self.camera_left:
+            self.camera_left.destroy()
+        if self.camera_right:
+            self.camera_right.destroy()
+            
+        # 雷达
+        if self.radar_front:
+            self.radar_front.destroy()
+        if self.radar_back:
+            self.radar_back.destroy()
+        if self.radar_left:
+            self.radar_left.destroy()
+        if self.radar_right:
+            self.radar_right.destroy()
             
         # 销毁所有生成的车辆
         for vehicle in self.other_vehicles:
@@ -656,10 +1066,169 @@ class CarlaDatasetGenerator:
         
         print('已清理所有资源')
 
+    def merge_radar_data(self):
+        """从四个雷达获取数据并合并"""
+        try:
+            # 获取四个方向的雷达数据
+            radar_front_data = self.radar_front_queue.get(timeout=2.0)
+            radar_back_data = self.radar_back_queue.get(timeout=2.0)
+            radar_left_data = self.radar_left_queue.get(timeout=2.0)
+            radar_right_data = self.radar_right_queue.get(timeout=2.0)
+            
+            # 处理并合并四个方向的雷达数据
+            radar_img, radar_points = self.process_radar_data([
+                ("front", radar_front_data),
+                ("back", radar_back_data),
+                ("left", radar_left_data),
+                ("right", radar_right_data)
+            ])
+            
+            return radar_img, radar_points
+            
+        except queue.Empty:
+            print("雷达数据获取超时")
+            return None, None
+
+    def process_radar_data(self, radar_data_list):
+        """处理多个方向的雷达数据，创建雷达可视化图像"""
+        # 创建雷达图像画布
+        radar_img = np.zeros((self.image_h, self.image_w, 3), dtype=np.uint8)
+        
+        # 计算中心点，表示本车位置
+        center_x, center_y = self.image_w // 2, self.image_h // 2
+        
+        # 绘制雷达背景网格和坐标轴
+        # 绘制中心点（车辆位置）
+        cv2.circle(radar_img, (center_x, center_y), 5, (0, 0, 255), -1)
+        
+        # 绘制同心圆，表示距离
+        for r in range(1, 6):
+            radius = int(min(self.image_w, self.image_h) / 12 * r)
+            cv2.circle(radar_img, (center_x, center_y), radius, (50, 50, 50), 1)
+        
+        # 绘制坐标轴
+        cv2.line(radar_img, (center_x, 0), (center_x, self.image_h), (50, 50, 50), 1)  # 垂直轴
+        cv2.line(radar_img, (0, center_y), (self.image_w, center_y), (50, 50, 50), 1)  # 水平轴
+        
+        # 添加距离标签
+        max_range_shown = self.radar_range
+        for r in range(1, 6):
+            distance = max_range_shown * r / 5
+            # 在同心圆右侧标注距离
+            label_x = center_x + int(min(self.image_w, self.image_h) / 12 * r)
+            label_y = center_y
+            cv2.putText(radar_img, f"{distance:.0f}m", (label_x + 5, label_y), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (150, 150, 150), 1)
+        
+        # 处理所有方向的雷达探测点
+        radar_points = []
+        point_id_counter = 0
+        
+        # 方向到颜色的映射，用于在预览图像中区分不同方向的点
+        direction_colors = {
+            "front": (0, 180, 0),   # 深绿色
+            "back": (0, 120, 180),  # 橙色
+            "left": (180, 0, 180),  # 紫色
+            "right": (180, 180, 0)  # 青色
+        }
+        
+        for direction, radar_data in radar_data_list:
+            for detect in radar_data:
+                # 获取极坐标信息
+                azimuth = detect.azimuth
+                altitude = detect.altitude
+                depth = detect.depth  # 距离
+                velocity = detect.velocity  # 相对速度
+                
+                # 调整方位角度，考虑雷达的朝向
+                adjusted_azimuth = azimuth
+                if direction == "back":
+                    # 后向雷达，需要旋转180度
+                    adjusted_azimuth = azimuth + math.pi
+                elif direction == "left":
+                    # 左向雷达，需要旋转90度
+                    adjusted_azimuth = azimuth + math.pi/2
+                elif direction == "right":
+                    # 右向雷达，需要旋转270度
+                    adjusted_azimuth = azimuth - math.pi/2
+                
+                # 确保方位角在-π到π范围内
+                while adjusted_azimuth > math.pi:
+                    adjusted_azimuth -= 2 * math.pi
+                while adjusted_azimuth < -math.pi:
+                    adjusted_azimuth += 2 * math.pi
+                
+                # 根据极坐标计算直角坐标 - 注意y轴向下
+                # 计算点在雷达图像上的位置，从中心点出发
+                scale = min(self.image_w, self.image_h) / (2 * self.radar_range)
+                x = center_x + int(depth * math.sin(adjusted_azimuth) * scale)
+                y = center_y - int(depth * math.cos(adjusted_azimuth) * scale)
+                
+                # 确保点在图像范围内
+                if 0 <= x < self.image_w and 0 <= y < self.image_h:
+                    # 根据方向选择颜色
+                    color = direction_colors.get(direction, (0, 100, 0))
+                    
+                    # 点的大小仍然基于速度，使移动较快的点更明显
+                    point_size = min(5, max(2, int(abs(velocity)) + 2))
+                    cv2.circle(radar_img, (x, y), point_size, color, -1)
+                    
+                    # 获取更多雷达属性，如信号强度等
+                    try:
+                        # 在CARLA 0.9.10+中可用
+                        snr = detect.get_snr() if hasattr(detect, 'get_snr') else 0.0
+                    except:
+                        snr = 0.0
+                    
+                    # 计算三维世界坐标 (相对于雷达传感器)
+                    world_x = depth * math.cos(altitude) * math.cos(azimuth)
+                    world_y = depth * math.cos(altitude) * math.sin(azimuth)
+                    world_z = depth * math.sin(altitude)
+                    
+                    # 根据雷达方向调整世界坐标
+                    if direction == "back":
+                        world_x = -world_x
+                        world_y = -world_y
+                    elif direction == "left":
+                        temp_x = world_x
+                        world_x = -world_y
+                        world_y = temp_x
+                    elif direction == "right":
+                        temp_x = world_x
+                        world_x = world_y
+                        world_y = -temp_x
+                    
+                    # 存储点信息供后续处理
+                    radar_points.append({
+                        'id': point_id_counter,  # 雷达点ID（全局唯一）
+                        'direction': direction,  # 雷达方向
+                        'x': x, 'y': y,  # 图像坐标
+                        'depth': depth,  # 实际距离
+                        'azimuth': adjusted_azimuth,  # 调整后的方位角
+                        'original_azimuth': azimuth,  # 原始方位角
+                        'altitude': altitude,  # 俯仰角
+                        'velocity': velocity,  # 相对速度
+                        'snr': snr,  # 信噪比
+                        'raw_position': (detect.depth, detect.azimuth, detect.altitude),  # 原始极坐标
+                        'world_position': (world_x, world_y, world_z),  # 3D世界坐标 (相对于车辆)
+                        'hit_vehicle_id': None,  # 击中的车辆ID，初始为None
+                        'is_hitting_vehicle': False,  # 是否击中车辆
+                    })
+                    point_id_counter += 1
+                    
+                    # 为明显移动的物体绘制速度矢量线
+                    if abs(velocity) > 3.0:
+                        line_length = min(20, max(5, int(abs(velocity) * 2)))
+                        end_x = x + int(line_length * math.sin(adjusted_azimuth))
+                        end_y = y - int(line_length * math.cos(adjusted_azimuth))
+                        cv2.line(radar_img, (x, y), (end_x, end_y), color, 1)
+        
+        return radar_img, radar_points
+
 
 def parse_arguments():
     """解析命令行参数"""
-    parser = argparse.ArgumentParser(description='CARLA车辆数据集生成器')
+    parser = argparse.ArgumentParser(description='CARLA车辆数据集生成器 - 多相机和雷达版本')
     
     parser.add_argument('--host', default='localhost', help='CARLA服务器主机名 (默认: localhost)')
     parser.add_argument('--port', type=int, default=2000, help='CARLA服务器端口 (默认: 2000)')
@@ -681,6 +1250,12 @@ def parse_arguments():
                       help='启用同步模式 (默认: 启用)')
     parser.add_argument('--autopilot', action='store_true', default=True,
                       help='启用车辆自动驾驶 (默认: 启用)')
+    parser.add_argument('--radar-fov', type=float, default=120.0,
+                      help='雷达视场角度 (默认: 120.0)')
+    parser.add_argument('--hit-tolerance', type=int, default=5,
+                      help='雷达命中检测的容忍像素范围 (默认: 5)')
+    parser.add_argument('--radar-hit-timeout', type=float, default=2.0,
+                      help='雷达命中超时时间，单位为秒，超过此时间未命中则不标记 (默认: 2.0)')
     
     return parser.parse_args()
 
@@ -700,10 +1275,12 @@ def main():
             output_dir=args.output_dir
         )
         
-        # 设置相机属性
+        # 设置相机和雷达属性
         generator.image_w = args.image_width
         generator.image_h = args.image_height
         generator.fov = args.fov
+        generator.radar_range = args.detection_range
+        generator.radar_fov = args.radar_fov
         
         # 使用与baseline_perception完全相同的方式连接客户端
         client = carla.Client(args.host, args.port)
@@ -721,7 +1298,9 @@ def main():
             capture_interval=args.capture_interval,
             show_3d_bbox=args.show_3d_bbox,
             detection_range=args.detection_range,
-            skip_empty_frames=args.skip_empty
+            skip_empty_frames=args.skip_empty,
+            hit_tolerance=args.hit_tolerance,
+            radar_hit_timeout=args.radar_hit_timeout
         )
         
     except KeyboardInterrupt:
