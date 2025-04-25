@@ -15,34 +15,34 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
 class RadarPointCloudDataset(Dataset):
-    """雷达点云数据集类"""
+    """Radar Point Cloud Dataset Class"""
     
     def __init__(self, data_dir, transform=None):
         """
-        初始化数据集
+        Initialize the dataset
         Args:
-            data_dir: 雷达点云数据目录
-            transform: 数据转换函数
+            data_dir: Radar point cloud data directory
+            transform: Data transformation function
         """
         self.data_dir = data_dir
         self.transform = transform
         self.json_files = sorted(glob.glob(os.path.join(data_dir, "*.json")))
         
-        # 提前加载所有数据以加速训练
+        # Pre-load all data to speed up training
         self.all_points = []
         self.all_labels = []
-        self.frame_indices = []  # 记录每个点所属的帧索引
+        self.frame_indices = []  # Record the frame index for each point
         
-        print(f"找到 {len(self.json_files)} 个雷达点云数据文件")
+        print(f"Found {len(self.json_files)} radar point cloud data files")
         
-        # 加载所有JSON文件中的点数据
+        # Load point data from all JSON files
         for i, json_file in enumerate(self.json_files):
             with open(json_file, 'r') as f:
                 data = json.load(f)
             
-            # 提取点特征和标签
+            # Extract point features and labels
             for point in data["points"]:
-                # 创建特征向量
+                # Create feature vector
                 features = [
                     point["depth"],
                     point["azimuth"],
@@ -54,22 +54,22 @@ class RadarPointCloudDataset(Dataset):
                     point["world_position"][2],  # z
                 ]
                 
-                # 获取标签 (是否击中车辆)
+                # Get label (whether hitting vehicle)
                 label = 1 if point["is_hitting_vehicle"] else 0
                 
                 self.all_points.append(features)
                 self.all_labels.append(label)
                 self.frame_indices.append(i)
         
-        # 转换为NumPy数组
+        # Convert to NumPy arrays
         self.all_points = np.array(self.all_points, dtype=np.float32)
         self.all_labels = np.array(self.all_labels, dtype=np.int64)
         
-        # 计算积极样本(击中车辆)的比例
+        # Calculate the proportion of positive samples (hitting vehicles)
         positive_rate = np.mean(self.all_labels)
-        print(f"数据集大小: {len(self.all_points)} 个点")
-        print(f"击中车辆的点: {np.sum(self.all_labels)} ({positive_rate:.2%})")
-        print(f"未击中车辆的点: {len(self.all_labels) - np.sum(self.all_labels)} ({1-positive_rate:.2%})")
+        print(f"Dataset size: {len(self.all_points)} points")
+        print(f"Points hitting vehicles: {np.sum(self.all_labels)} ({positive_rate:.2%})")
+        print(f"Points not hitting vehicles: {len(self.all_labels) - np.sum(self.all_labels)} ({1-positive_rate:.2%})")
     
     def __len__(self):
         return len(self.all_points)
@@ -84,35 +84,35 @@ class RadarPointCloudDataset(Dataset):
         return torch.FloatTensor(features), torch.tensor(label, dtype=torch.long)
 
 class SimpleNormalization:
-    """简单的特征归一化转换"""
+    """Simple feature normalization transformation"""
     
     def __init__(self, mean=None, std=None):
         self.mean = mean
         self.std = std
     
     def fit(self, data):
-        """计算均值和标准差"""
+        """Calculate mean and standard deviation"""
         self.mean = np.mean(data, axis=0)
         self.std = np.std(data, axis=0)
-        # 避免除零错误
+        # Avoid division by zero
         self.std[self.std == 0] = 1.0
         return self
     
     def __call__(self, features):
-        """将特征归一化"""
+        """Normalize features"""
         if self.mean is None or self.std is None:
             return features
         return (features - self.mean) / self.std
 
 class RadarPointClassifier(nn.Module):
-    """雷达点分类器，预测点是否击中车辆"""
+    """Radar point classifier, predicts whether points hit vehicles"""
     
     def __init__(self, input_size=8, hidden_size=64, dropout_rate=0.3):
         super(RadarPointClassifier, self).__init__()
         
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, 2)  # 二分类输出
+        self.fc3 = nn.Linear(hidden_size, 2)  # Binary classification output
         
         self.bn1 = nn.BatchNorm1d(hidden_size)
         self.bn2 = nn.BatchNorm1d(hidden_size)
@@ -128,19 +128,19 @@ class RadarPointClassifier(nn.Module):
         return x
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, device, num_epochs=10):
-    """训练模型"""
-    # 跟踪训练和验证损失
+    """Train the model"""
+    # Track training and validation losses
     train_losses = []
     val_losses = []
     train_accs = []
     val_accs = []
     
-    # 最佳模型权重
+    # Best model weights
     best_val_loss = float('inf')
     best_model_weights = None
     
     for epoch in range(num_epochs):
-        # 训练阶段
+        # Training phase
         model.train()
         train_loss = 0.0
         train_correct = 0
@@ -149,30 +149,30 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             
-            # 梯度归零
+            # Zero gradients
             optimizer.zero_grad()
             
-            # 前向传播
+            # Forward pass
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             
-            # 反向传播和优化
+            # Backward pass and optimization
             loss.backward()
             optimizer.step()
             
-            # 统计
+            # Statistics
             train_loss += loss.item() * inputs.size(0)
             _, predicted = torch.max(outputs, 1)
             train_total += labels.size(0)
             train_correct += (predicted == labels).sum().item()
         
-        # 计算训练集上的平均损失和准确率
+        # Calculate average loss and accuracy on training set
         train_loss = train_loss / len(train_loader.dataset)
         train_acc = train_correct / train_total
         train_losses.append(train_loss)
         train_accs.append(train_acc)
         
-        # 验证阶段
+        # Validation phase
         model.eval()
         val_loss = 0.0
         val_correct = 0
@@ -182,23 +182,23 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
             for inputs, labels in val_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
                 
-                # 前向传播
+                # Forward pass
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 
-                # 统计
+                # Statistics
                 val_loss += loss.item() * inputs.size(0)
                 _, predicted = torch.max(outputs, 1)
                 val_total += labels.size(0)
                 val_correct += (predicted == labels).sum().item()
         
-        # 计算验证集上的平均损失和准确率
+        # Calculate average loss and accuracy on validation set
         val_loss = val_loss / len(val_loader.dataset)
         val_acc = val_correct / val_total
         val_losses.append(val_loss)
         val_accs.append(val_acc)
         
-        # 保存最佳模型
+        # Save best model
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_model_weights = model.state_dict().copy()
@@ -207,13 +207,13 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
               f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
               f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
     
-    # 加载最佳模型权重
+    # Load best model weights
     model.load_state_dict(best_model_weights)
     
     return model, train_losses, val_losses, train_accs, val_accs
 
 def evaluate_model(model, data_loader, criterion, device):
-    """评估模型性能"""
+    """Evaluate model performance"""
     model.eval()
     
     all_preds = []
@@ -224,44 +224,44 @@ def evaluate_model(model, data_loader, criterion, device):
         for inputs, labels in data_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             
-            # 前向传播
+            # Forward pass
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             
-            # 统计
+            # Statistics
             total_loss += loss.item() * inputs.size(0)
             _, predicted = torch.max(outputs, 1)
             
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
     
-    # 计算平均损失
+    # Calculate average loss
     avg_loss = total_loss / len(data_loader.dataset)
     
-    # 计算分类报告和混淆矩阵
-    report = classification_report(all_labels, all_preds, target_names=["非车辆", "车辆"])
+    # Calculate classification report and confusion matrix
+    report = classification_report(all_labels, all_preds, target_names=["Non-Vehicle", "Vehicle"])
     cm = confusion_matrix(all_labels, all_preds)
     
     return avg_loss, report, cm, all_preds, all_labels
 
 def plot_training_history(train_losses, val_losses, train_accs, val_accs, save_path=None):
-    """绘制训练历史"""
+    """Plot training history"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
-    # 绘制损失图
-    ax1.plot(train_losses, label='训练损失')
-    ax1.plot(val_losses, label='验证损失')
+    # Plot loss graph
+    ax1.plot(train_losses, label='Training Loss')
+    ax1.plot(val_losses, label='Validation Loss')
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss')
-    ax1.set_title('训练和验证损失')
+    ax1.set_title('Training and Validation Loss')
     ax1.legend()
     
-    # 绘制准确率图
-    ax2.plot(train_accs, label='训练准确率')
-    ax2.plot(val_accs, label='验证准确率')
+    # Plot accuracy graph
+    ax2.plot(train_accs, label='Training Accuracy')
+    ax2.plot(val_accs, label='Validation Accuracy')
     ax2.set_xlabel('Epoch')
     ax2.set_ylabel('Accuracy')
-    ax2.set_title('训练和验证准确率')
+    ax2.set_title('Training and Validation Accuracy')
     ax2.legend()
     
     plt.tight_layout()
@@ -272,27 +272,41 @@ def plot_training_history(train_losses, val_losses, train_accs, val_accs, save_p
     plt.show()
 
 def plot_confusion_matrix(cm, save_path=None):
-    """绘制混淆矩阵"""
+    """Draw confusion matrix"""
     plt.figure(figsize=(8, 6))
-    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title('混淆矩阵')
+    
+    # Transpose confusion matrix to have:
+    # y-axis (rows) = predicted labels
+    # x-axis (columns) = true labels
+    cm = cm.T
+    
+    # Reverse the order of classes to have Vehicle first, Background second
+    # This will put vehicle-vehicle in the top-left corner and background-background in the bottom-right
+    cm = cm[::-1, ::-1]
+    
+    # Calculate normalized confusion matrix (normalize by column since columns are now true labels)
+    cm_norm = cm.astype('float') / cm.sum(axis=0)[np.newaxis, :]
+    
+    # Use imshow to display the matrix with Blues colormap
+    plt.imshow(cm_norm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Normalized Confusion Matrix')
     plt.colorbar()
     
-    classes = ["非车辆", "车辆"]
+    classes = ["Vehicle", "Background"]
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
     
-    # 添加文本注释
-    thresh = cm.max() / 2.
+    # Add text annotations with fixed format (2 decimal places)
+    thresh = cm_norm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            plt.text(j, i, format(cm[i, j], 'd'),
+            plt.text(j, i, format(cm_norm[i, j], '.2f'),
                      horizontalalignment="center",
-                     color="white" if cm[i, j] > thresh else "black")
+                     color="white" if cm_norm[i, j] > thresh else "black")
     
-    plt.ylabel('真实标签')
-    plt.xlabel('预测标签')
+    plt.ylabel('Predicted Label')
+    plt.xlabel('True Label')
     plt.tight_layout()
     
     if save_path:
@@ -301,46 +315,46 @@ def plot_confusion_matrix(cm, save_path=None):
     plt.show()
 
 def save_model(model, normalizer, save_dir):
-    """保存模型和归一化参数"""
-    # 创建保存目录
+    """Save model and normalization parameters"""
+    # Create save directory
     os.makedirs(save_dir, exist_ok=True)
     
-    # 保存模型
+    # Save model
     torch.save(model.state_dict(), os.path.join(save_dir, 'radar_model.pth'))
     
-    # 保存归一化参数
+    # Save normalization parameters
     np.savez(os.path.join(save_dir, 'normalizer_params.npz'),
              mean=normalizer.mean, std=normalizer.std)
     
-    print(f"模型和归一化参数已保存到 {save_dir}")
+    print(f"Model and normalization parameters saved to {save_dir}")
 
 def main(data_dir, model_dir, batch_size=64, num_epochs=30, learning_rate=0.001, hidden_size=128, weight_decay=1e-4):
-    """主函数"""
-    # 检查数据目录
+    """Main function"""
+    # Check data directory
     if not os.path.exists(data_dir):
-        raise ValueError(f"数据目录不存在: {data_dir}")
+        raise ValueError(f"Data directory does not exist: {data_dir}")
     
-    # 创建输出目录
+    # Create output directory
     os.makedirs(model_dir, exist_ok=True)
     
-    # 设备配置
+    # Device configuration
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"使用设备: {device}")
+    print(f"Using device: {device}")
     
-    # 加载并预处理数据
+    # Load and preprocess data
     dataset = RadarPointCloudDataset(data_dir, transform=None)
     
-    # 划分数据集
+    # Split dataset
     train_indices, test_indices = train_test_split(
         range(len(dataset)), test_size=0.2, random_state=42,
-        stratify=dataset.all_labels  # 确保训练集和测试集中的类别分布一致
+        stratify=dataset.all_labels  # Ensure consistent class distribution in train and test sets
     )
     
-    # 创建归一化转换
+    # Create normalization transformation
     normalizer = SimpleNormalization()
     normalizer.fit(dataset.all_points[train_indices])
     
-    # 应用归一化并创建数据加载器
+    # Apply normalization and create data loaders
     train_dataset = RadarPointCloudDataset(
         data_dir,
         transform=normalizer
@@ -351,7 +365,7 @@ def main(data_dir, model_dir, batch_size=64, num_epochs=30, learning_rate=0.001,
         transform=normalizer
     )
     
-    # 使用子集数据集
+    # Use subset datasets
     train_dataset.all_points = dataset.all_points[train_indices]
     train_dataset.all_labels = dataset.all_labels[train_indices]
     train_dataset.frame_indices = [dataset.frame_indices[i] for i in train_indices]
@@ -360,72 +374,72 @@ def main(data_dir, model_dir, batch_size=64, num_epochs=30, learning_rate=0.001,
     test_dataset.all_labels = dataset.all_labels[test_indices]
     test_dataset.frame_indices = [dataset.frame_indices[i] for i in test_indices]
     
-    # 创建数据加载器
+    # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
-    # 计算类别权重以处理数据不平衡
+    # Calculate class weights to handle data imbalance
     class_counts = np.bincount(dataset.all_labels)
     total_samples = len(dataset.all_labels)
     class_weights = total_samples / (len(class_counts) * class_counts)
     class_weights = torch.FloatTensor(class_weights).to(device)
     
-    print(f"类别权重: {class_weights}")
+    print(f"Class weights: {class_weights}")
     
-    # 创建模型
+    # Create model
     model = RadarPointClassifier(
         input_size=dataset.all_points.shape[1],
         hidden_size=hidden_size
     ).to(device)
     
-    # 定义损失函数和优化器
+    # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     
-    # 训练模型
+    # Train model
     model, train_losses, val_losses, train_accs, val_accs = train_model(
         model, train_loader, test_loader, criterion, optimizer, device, num_epochs
     )
     
-    # 绘制训练历史
+    # Plot training history
     plot_training_history(
         train_losses, val_losses, train_accs, val_accs,
         save_path=os.path.join(model_dir, 'training_history.png')
     )
     
-    # 评估模型
+    # Evaluate model
     test_loss, classification_rep, cm, _, _ = evaluate_model(
         model, test_loader, criterion, device
     )
     
-    print(f"\n测试集损失: {test_loss:.4f}")
-    print("\n分类报告:")
+    print(f"\nTest Set Loss: {test_loss:.4f}")
+    print("\nClassification Report:")
     print(classification_rep)
     
-    # 绘制混淆矩阵
+    # Plot confusion matrix
     plot_confusion_matrix(cm, save_path=os.path.join(model_dir, 'confusion_matrix.png'))
     
-    # 保存模型和归一化参数
+    # Save model and normalization parameters
     save_model(model, normalizer, model_dir)
     
-    print("\n训练完成!")
+    print("\nTraining Completed!")
 
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description='训练雷达点云车辆检测模型')
+    parser = argparse.ArgumentParser(description='Train Radar Point Cloud Vehicle Detection Model')
     parser.add_argument('--data_dir', type=str, default='radar_pointcloud_dataset/radar_points',
-                        help='雷达点云数据目录')
+                        help='Radar point cloud data directory')
     parser.add_argument('--model_dir', type=str, default='radar_model',
-                        help='模型保存目录')
+                        help='Model save directory')
     parser.add_argument('--batch_size', type=int, default=64,
-                        help='批量大小')
+                        help='Batch size')
     parser.add_argument('--epochs', type=int, default=30,
-                        help='训练轮数')
+                        help='Number of epochs')
     parser.add_argument('--lr', type=float, default=0.001,
-                        help='学习率')
+                        help='Learning rate')
     parser.add_argument('--hidden_size', type=int, default=128,
-                        help='隐藏层大小')
+                        help='Hidden layer size')
     
     args = parser.parse_args()
     

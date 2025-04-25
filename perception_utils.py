@@ -626,6 +626,19 @@ def spawn_surrounding_vehicles(client, world, number_of_vehicles=20, spawn_point
         if actor:
             actual_vehicles.append(actor)
     
+    # 为所有生成的车辆设置速度
+    try:
+        traffic_manager = client.get_trafficmanager(8000)
+        for vehicle in actual_vehicles:
+            # 设置与主车相同的速度（正常速度的1/3）
+            traffic_manager.vehicle_percentage_speed_difference(vehicle, 66.7)
+            # 其他设置保持默认
+            traffic_manager.distance_to_leading_vehicle(vehicle, 1.0)
+            traffic_manager.ignore_lights_percentage(vehicle, 30)
+        print("已为所有生成的车辆设置速度为正常速度的1/3")
+    except Exception as e:
+        print(f"设置车辆行为参数失败: {e}")
+    
     print(f"成功生成 {len(actual_vehicles)} 辆车 (请求数量: {number_of_vehicles})")
     return actual_vehicles
 
@@ -690,8 +703,14 @@ def initialize_world(client, args):
     
     return world, original_settings
 
-def spawn_ego_vehicle(world, args):
-    """生成自我驾驶车辆"""
+def spawn_ego_vehicle(world, args, client=None):
+    """生成自我驾驶车辆
+    
+    Args:
+        world: CARLA世界对象
+        args: 命令行参数
+        client: CARLA客户端对象，用于获取交通管理器
+    """
     # 创建自我车辆
     bp = world.get_blueprint_library().filter('model3')[0]
     spawn_points = world.get_map().get_spawn_points()
@@ -726,6 +745,19 @@ def spawn_ego_vehicle(world, args):
     vehicle.set_autopilot(args.autopilot)
     autopilot_status = "已启用" if args.autopilot else "已禁用"
     print(f"自动驾驶{autopilot_status}")
+    
+    # 设置车辆速度为正常的1/3，保持与generate_radar_dataset.py一致
+    if args.autopilot and client is not None:
+        try:
+            traffic_manager = client.get_trafficmanager(8000)
+            traffic_manager.ignore_lights_percentage(vehicle, 30)  # 30%概率忽略红绿灯，保持适当移动
+            traffic_manager.distance_to_leading_vehicle(vehicle, 1.0)  # 正常前车距离
+            
+            # 主车速度设置为原来的1/3 
+            print("设置主车速度为正常速度的1/3")
+            traffic_manager.vehicle_percentage_speed_difference(vehicle, 66.7)
+        except Exception as e:
+            print(f"注意: 设置高级交通管理器参数失败: {e}")
     
     return vehicle, spawn_idx, spawn_points
 

@@ -17,6 +17,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import json
 import copy
+import queue  # 添加queue导入，用于传感器数据队列
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -1726,6 +1727,64 @@ class RadarOverviewManager:
             offset = self.display_man.get_display_offset(self.display_pos)
             self.display_man.display.blit(self.surface, offset)
 
+# 添加CarlaSyncMode类，用于同步传感器数据
+class CarlaSyncMode(object):
+    """
+    上下文管理器，用于同步不同传感器的输出。
+    只要我们在这个上下文中，同步模式就会启用。
+
+    使用示例：
+        with CarlaSyncMode(world, fps=20) as sync_mode:
+            while True:
+                world_snapshot = sync_mode.tick(timeout=1.0)
+    """
+
+    def __init__(self, world, **kwargs):
+        self.world = world
+        self.frame = None
+        self.delta_seconds = 1.0 / kwargs.get('fps', 20)
+        self._queues = []
+        self._settings = None
+
+    def __enter__(self):
+        self._settings = self.world.get_settings()
+        self.frame = self.world.apply_settings(carla.WorldSettings(
+            no_rendering_mode=False,
+            synchronous_mode=True,
+            fixed_delta_seconds=self.delta_seconds))
+
+        def make_queue(register_event):
+            q = queue.Queue()
+            register_event(q.put)
+            self._queues.append(q)
+
+        # 首先为世界tick事件创建队列
+        make_queue(self.world.on_tick)
+        
+        # 不为传感器注册新的监听函数，因为它们已经在SensorManager中注册了
+        # 这可以防止"Assertion failed: (_clients.find(token.get_stream_id())) == (_clients.end())"错误
+
+        return self
+
+    def tick(self, timeout):
+        self.frame = self.world.tick()
+        
+        # 只获取世界tick事件的数据，我们不监听传感器事件
+        world_snapshot = self._retrieve_data(self._queues[0], timeout)
+        
+        # 返回世界快照
+        return [world_snapshot]
+
+    def __exit__(self, *args, **kwargs):
+        self.world.apply_settings(self._settings)
+
+    def _retrieve_data(self, sensor_queue, timeout):
+        while True:
+            data = sensor_queue.get(timeout=timeout)
+            if data.frame == self.frame:
+                return data
+
+# 修改run_simulation函数，使用CarlaSyncMode进行传感器同步
 def run_simulation(args, client):
     """Run simulation"""
     display_manager = None
@@ -1737,6 +1796,8 @@ def run_simulation(args, client):
     radar_inference = None
     lidar_inference = None
     radar_overview = None
+    vehicle_prediction = None  # 添加车辆预测管理器变量
+    sensor_list = []  # 用于存储所有传感器实例，便于同步
 
     try:
         # 加载YOLO模型
@@ -1772,7 +1833,7 @@ def run_simulation(args, client):
         world, original_settings = initialize_world(client, args)
         
         # 生成自我驾驶车辆
-        vehicle, spawn_idx, spawn_points = spawn_ego_vehicle(world, args)
+        vehicle, spawn_idx, spawn_points = spawn_ego_vehicle(world, args, client)
         vehicle_list.append(vehicle)
         
         # 生成其他车辆
@@ -1781,75 +1842,86 @@ def run_simulation(args, client):
             available_spawn_points = [p for i, p in enumerate(spawn_points) if i != spawn_idx]
             other_vehicles = spawn_surrounding_vehicles(client, world, min(args.vehicles, len(available_spawn_points)), available_spawn_points)
 
-        # 修改显示布局为3*5
-        display_manager = DisplayManager(grid_size=[3, 5], window_size=[args.width, args.height])
+        # 修改显示布局为3*4
+        display_manager = DisplayManager(grid_size=[3, 4], window_size=[args.width, args.height])
 
         # 创建传感器时使用命令行参数设置range
         range_str = str(args.range)  # 将range转换为字符串
         print(f"Sensor range set to: {range_str} meters")
 
         # 创建雷达概览管理器 - 确保在传感器创建之前初始化
-        radar_overview = RadarOverviewManager(display_manager, display_pos=[1, 4])
-        print(f"Created radar overview manager at position [1, 4]")
+        radar_overview = RadarOverviewManager(display_manager, display_pos=[1, 3])
+        print(f"Created radar overview manager at position [1, 3]")
+        
+        # 创建车辆运动预测管理器（独立窗口）
+        vehicle_prediction = VehicleMotionPredictionManager(world, ego_vehicle=vehicle, window_size=(800, 600), window_title="Vehicle Motion Prediction")
+        print(f"Created vehicle motion prediction manager in a separate window")
 
         # Create sensors - First row: Cameras with YOLO detection
         if yolo_model:
             # 使用YOLOv5增强的相机传感器
             # Front camera
-            YOLOSensorManager(world, display_manager, 'RGBCamera', 
+            front_camera = YOLOSensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=2.0, z=2.0), carla.Rotation(yaw=0)), 
                          vehicle, {}, display_pos=[0, 1], model=yolo_model, 
                          conf_thres=args.conf_thres, iou_thres=args.iou_thres, img_size=args.img_size,
                          sensor_name="Front Camera+YOLO")
+            sensor_list.append(front_camera.sensor)
             
             # Left camera
-            YOLOSensorManager(world, display_manager, 'RGBCamera', 
+            left_camera = YOLOSensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=-90)), 
                          vehicle, {}, display_pos=[0, 0], model=yolo_model, 
                          conf_thres=args.conf_thres, iou_thres=args.iou_thres, img_size=args.img_size,
                          sensor_name="Left Camera+YOLO")
+            sensor_list.append(left_camera.sensor)
             
-            # Right camera
-            YOLOSensorManager(world, display_manager, 'RGBCamera', 
+            # Right camera - 使用YOLO识别
+            right_camera = YOLOSensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=90)), 
                          vehicle, {}, display_pos=[0, 2], model=yolo_model, 
                          conf_thres=args.conf_thres, iou_thres=args.iou_thres, img_size=args.img_size,
                          sensor_name="Right Camera+YOLO")
+            sensor_list.append(right_camera.sensor)
             
-            # Rear camera
-            YOLOSensorManager(world, display_manager, 'RGBCamera', 
+            # Rear camera - 使用YOLO识别
+            rear_camera = YOLOSensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=180)), 
                          vehicle, {}, display_pos=[0, 3], model=yolo_model, 
                          conf_thres=args.conf_thres, iou_thres=args.iou_thres, img_size=args.img_size,
                          sensor_name="Rear Camera+YOLO")
-            
+            sensor_list.append(rear_camera.sensor)
+
+            # 移除45度角摄像头
+        
         else:
             # 使用原始相机传感器（无YOLO）
             # Front camera
-            SensorManager(world, display_manager, 'RGBCamera', 
+            front_camera = SensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=2.0, z=2.0), carla.Rotation(yaw=0)), 
                          vehicle, {}, display_pos=[0, 1], sensor_name="Front Camera")
+            sensor_list.append(front_camera.sensor)
             
             # Left camera
-            SensorManager(world, display_manager, 'RGBCamera', 
+            left_camera = SensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=-90)), 
                          vehicle, {}, display_pos=[0, 0], sensor_name="Left Camera")
+            sensor_list.append(left_camera.sensor)
             
             # Right camera
-            SensorManager(world, display_manager, 'RGBCamera', 
+            right_camera = SensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=90)), 
                          vehicle, {}, display_pos=[0, 2], sensor_name="Right Camera")
+            sensor_list.append(right_camera.sensor)
             
             # Rear camera
-            SensorManager(world, display_manager, 'RGBCamera', 
+            rear_camera = SensorManager(world, display_manager, 'RGBCamera', 
                          carla.Transform(carla.Location(x=0, z=2.0), carla.Rotation(yaw=180)), 
                          vehicle, {}, display_pos=[0, 3], sensor_name="Rear Camera")
+            sensor_list.append(rear_camera.sensor)
+            
+            # 45度角相机配置在这里也移除
 
-            # 添加45度角摄像头
-            SensorManager(world, display_manager, 'RGBCamera', 
-                         carla.Transform(carla.Location(x=1.5, z=2.0), carla.Rotation(yaw=45)), 
-                         vehicle, {}, display_pos=[0, 4], sensor_name="Front-Right Camera")
-        
         # Second row: Radars - 使用命令行参数设置range和RadarSensorManager进行车辆检测
         radar_sensor_options = {
             'horizontal_fov': '120', 
@@ -1864,6 +1936,7 @@ def run_simulation(args, client):
                     vehicle, radar_sensor_options, 
                     display_pos=[1, 1], inference_model=radar_inference, 
                     conf_thres=args.radar_conf_thres, sensor_name="Front Radar+Detector")
+        sensor_list.append(front_radar.sensor)
         
         # Left radar
         left_radar = RadarSensorManager(world, display_manager, 'Radar', 
@@ -1871,6 +1944,7 @@ def run_simulation(args, client):
                     vehicle, radar_sensor_options, 
                     display_pos=[1, 0], inference_model=radar_inference, 
                     conf_thres=args.radar_conf_thres, sensor_name="Left Radar+Detector")
+        sensor_list.append(left_radar.sensor)
         
         # Right radar
         right_radar = RadarSensorManager(world, display_manager, 'Radar', 
@@ -1878,6 +1952,7 @@ def run_simulation(args, client):
                     vehicle, radar_sensor_options, 
                     display_pos=[1, 2], inference_model=radar_inference, 
                     conf_thres=args.radar_conf_thres, sensor_name="Right Radar+Detector")
+        sensor_list.append(right_radar.sensor)
         
         # Rear radar
         rear_radar = RadarSensorManager(world, display_manager, 'Radar', 
@@ -1885,6 +1960,7 @@ def run_simulation(args, client):
                     vehicle, radar_sensor_options, 
                     display_pos=[1, 3], inference_model=radar_inference, 
                     conf_thres=args.radar_conf_thres, sensor_name="Rear Radar+Detector")
+        sensor_list.append(rear_radar.sensor)
 
         # 将雷达传感器注册到雷达概览管理器 - 确保正确注册
         print("Registering radar sensors to overview manager...")
@@ -1908,66 +1984,350 @@ def run_simulation(args, client):
         # 根据是否有LiDAR推理模型来使用不同的传感器管理器
         if lidar_inference:
             # 使用带推理模型的LiDAR传感器管理器
-            LidarSensorManager(world, display_manager, 'LiDAR', 
+            lidar_sensor = LidarSensorManager(world, display_manager, 'LiDAR', 
                              carla.Transform(carla.Location(x=-0.2, z=2.4)), 
                              vehicle, lidar_sensor_options, 
                              display_pos=[2, 1], inference_model=lidar_inference,
                              conf_thres=args.lidar_conf_thres, sensor_name="LiDAR+Detector")
+            sensor_list.append(lidar_sensor.sensor)
         else:
             # 使用原始LiDAR传感器管理器
-            SensorManager(world, display_manager, 'LiDAR', 
+            lidar_sensor = SensorManager(world, display_manager, 'LiDAR', 
                          carla.Transform(carla.Location(x=0, z=2.4)), 
                          vehicle, lidar_sensor_options, 
                          display_pos=[2, 1], sensor_name="LiDAR")
+            sensor_list.append(lidar_sensor.sensor)
         
         # 添加鸟瞰图 (Bird's eye view)
-        SensorManager(world, display_manager, 'RGBCamera', 
+        bird_eye_view = SensorManager(world, display_manager, 'RGBCamera', 
                      carla.Transform(carla.Location(x=0, z=30.0), carla.Rotation(pitch=-90)), 
                      vehicle, {'fov': '90'}, display_pos=[2, 0], sensor_name="Bird's Eye View")
+        sensor_list.append(bird_eye_view.sensor)
 
+        # 确保我们在同步模式下运行
+        args.sync = True
+        print(f"启用同步模式用于传感器同步")
+        
+        # 创建CarlaSyncMode实例，用于同步所有传感器
+        fps = 20  # 设置模拟的FPS
+        print(f"设置同步模式FPS: {fps}")
+        
         # Simulation loop
         call_exit = False
         time_init_sim = timer.time()
-        print(f"Baseline demonstration started, including {len(other_vehicles)} additional vehicles. Press ESC or Q to exit.")
+        print(f"基线演示启动，包含 {len(other_vehicles)} 辆额外车辆。按ESC或Q退出。")
         
-        while True:
-            # Carla tick
-            if args.sync:
-                world.tick()
-            else:
-                world.wait_for_tick()
-
-            # 确保雷达概览在每帧都更新
-            if radar_overview:
-                radar_overview.update()
-            
-            # 先渲染普通传感器
-            display_manager.render()
-            
-            # 最后单独渲染雷达概览，确保它不会被其他渲染覆盖
-            if radar_overview:
-                radar_overview.render()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    call_exit = True
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == K_ESCAPE or event.key == K_q:
+        # 使用同步模式上下文
+        with CarlaSyncMode(world, fps=fps) as sync_mode:
+            while True:
+                # 使用同步模式，等待所有传感器数据
+                try:
+                    # 只获取世界快照，不再获取传感器数据
+                    # 因为传感器数据处理已经由各自的回调函数处理
+                    sync_data = sync_mode.tick(timeout=2.0)
+                    snapshot = sync_data[0]  # 第一个元素是world.tick的结果
+                    
+                    # 确保雷达概览在每帧都更新
+                    if radar_overview:
+                        radar_overview.update()
+                    
+                    # 确保车辆运动预测在每帧都更新（OpenCV独立窗口）
+                    if vehicle_prediction and vehicle_prediction.running:
+                        vehicle_prediction.update()
+                    
+                    # 渲染所有传感器显示
+                    display_manager.render()
+                    
+                    # 单独渲染雷达概览
+                    if radar_overview:
+                        radar_overview.render()
+                    
+                    # 如果预测窗口关闭，重新创建
+                    if vehicle_prediction and not vehicle_prediction.running:
+                        print("Prediction window closed, recreating...")
+                        vehicle_prediction = VehicleMotionPredictionManager(world, ego_vehicle=vehicle, window_size=(800, 600), window_title="Vehicle Motion Prediction")
+                    
+                    # 每次迭代打印当前帧信息，可用于调试
+                    fps_sim = round(1.0 / snapshot.timestamp.delta_seconds)
+                    print(f"\r模拟运行中，FPS: {fps_sim} (帧: {sync_mode.frame})", end="")
+                    
+                except Exception as e:
+                    print(f"\n同步模式执行期间出错: {e}")
+                
+                # 检查退出事件
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
                         call_exit = True
-                        break
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == K_ESCAPE or event.key == K_q:
+                            call_exit = True
+                            break
 
-            if call_exit:
-                break
+                if call_exit:
+                    break
 
     finally:
+        # 清理独立窗口
+        if 'vehicle_prediction' in locals() and vehicle_prediction:
+            vehicle_prediction.destroy()
+            
         if display_manager:
             display_manager.destroy()
 
         # Clean up all vehicles
         all_vehicles = vehicle_list + other_vehicles
         client.apply_batch([carla.command.DestroyActor(x) for x in all_vehicles])
-        world.apply_settings(original_settings)
+        if 'original_settings' in locals():
+            world.apply_settings(original_settings)
 
+# 在RadarOverviewManager类后添加新的VehicleMotionPredictionManager类
+class VehicleMotionPredictionManager:
+    """
+    车辆运动预测管理器类，用于在独立OpenCV窗口中显示NPC车辆位置、运动预测、速度向量和碰撞时间
+    """
+    def __init__(self, world, ego_vehicle, window_size=(640, 480), window_title="Vehicle Motion Prediction"):
+        """
+        初始化车辆运动预测管理器
+        Args:
+            world: Carla世界对象
+            ego_vehicle: 自动驾驶车辆
+            window_size: 独立窗口的大小
+            window_title: 独立窗口的标题
+        """
+        self.world = world
+        self.ego_vehicle = ego_vehicle
+        self.window_size = window_size
+        self.window_title = window_title
+        
+        # 使用OpenCV创建窗口
+        cv2.namedWindow(self.window_title, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(self.window_title, self.window_size[0], self.window_size[1])
+        
+        self.timer = CustomTimer()
+        self.time_processing = 0.0
+        self.tics_processing = 0
+        self.running = True
+        
+        # 初始化画面
+        self.init_screen()
+    
+    def init_screen(self):
+        """初始化画面"""
+        try:
+            init_img = np.zeros((self.window_size[1], self.window_size[0], 3), dtype=np.uint8)
+            cv2.putText(init_img, "Vehicle Motion Prediction", (10, 30), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.putText(init_img, "Initializing...", (10, 60), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+            
+            # 显示初始画面
+            cv2.imshow(self.window_title, init_img)
+            cv2.waitKey(1)  # 不等待按键，只刷新显示
+        except Exception as e:
+            print(f"Error initializing prediction window: {e}")
+            self.running = False
+    
+    def update(self):
+        """更新车辆运动预测视图"""
+        if not self.running:
+            return
+        
+        # 检查窗口是否关闭
+        try:
+            if cv2.getWindowProperty(self.window_title, cv2.WND_PROP_VISIBLE) < 1:
+                self.running = False
+                return
+        except:
+            self.running = False
+            return
+        
+        t_start = self.timer.time()
+        
+        try:
+            # 创建黑色背景
+            prediction_img = np.zeros((self.window_size[1], self.window_size[0], 3), dtype=np.uint8)
+            
+            # 添加标题
+            cv2.putText(prediction_img, "Vehicle Motion Prediction", (10, 30), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            
+            # 计算中心点（自车位置）
+            center_x, center_y = int(self.window_size[0] / 2), int(self.window_size[1] / 2)
+            
+            # 绘制自车位置
+            cv2.circle(prediction_img, (center_x, center_y), 8, (0, 0, 255), -1)  # 红色圆表示自车
+            cv2.putText(prediction_img, "Ego", (center_x + 10, center_y), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+            
+            # 绘制参考线
+            # 绘制同心圆，表示距离
+            for r in range(1, 6):
+                radius = int(min(self.window_size) / 10 * r)
+                cv2.circle(prediction_img, (center_x, center_y), radius, (50, 50, 50), 1)
+                # 添加距离标签
+                cv2.putText(prediction_img, f"{r*10}m", (center_x + radius - 20, center_y - 10), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 100, 100), 1)
+            
+            # 绘制坐标轴
+            cv2.line(prediction_img, (center_x, 0), (center_x, self.window_size[1]), (50, 50, 50), 1)
+            cv2.line(prediction_img, (0, center_y), (self.window_size[0], center_y), (50, 50, 50), 1)
+            
+            # 获取自车速度和位置
+            ego_location = self.ego_vehicle.get_location()
+            ego_velocity = self.ego_vehicle.get_velocity()
+            ego_speed = math.sqrt(ego_velocity.x**2 + ego_velocity.y**2 + ego_velocity.z**2)
+            
+            # 显示自车速度
+            cv2.putText(prediction_img, f"Ego Speed: {ego_speed*3.6:.1f} km/h", (10, self.window_size[1]-10), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+            
+            # 获取所有NPC车辆
+            vehicles = self.world.get_actors().filter('vehicle.*')
+            
+            # 计算和绘制每个NPC车辆
+            npc_count = 0
+            
+            for vehicle in vehicles:
+                # 跳过自车
+                if vehicle.id == self.ego_vehicle.id:
+                    continue
+                
+                # 获取NPC车辆位置和速度
+                npc_location = vehicle.get_location()
+                npc_velocity = vehicle.get_velocity()
+                
+                # 计算NPC车辆相对于自车的位置
+                rel_x = npc_location.x - ego_location.x
+                rel_y = npc_location.y - ego_location.y
+                distance = math.sqrt(rel_x**2 + rel_y**2)
+                
+                # 只显示一定范围内的车辆（50米内）
+                if distance > 50:
+                    continue
+                
+                # 计算图像上的位置
+                scale = min(self.window_size) / 100.0  # 缩放因子，100米映射到整个视图
+                px = center_x + int(rel_y * scale)  # 注意：x对应于自车前进方向，即y轴
+                py = center_y - int(rel_x * scale)  # y对应于自车左右方向，即x轴，需要取反
+                
+                # 计算NPC车辆的速度大小和方向
+                npc_speed = math.sqrt(npc_velocity.x**2 + npc_velocity.y**2 + npc_velocity.z**2)
+                
+                # 计算相对速度向量
+                rel_vx = npc_velocity.x - ego_velocity.x
+                rel_vy = npc_velocity.y - ego_velocity.y
+                rel_speed = math.sqrt(rel_vx**2 + rel_vy**2)
+                
+                # 计算碰撞时间 (TTC)
+                ttc = float('inf')  # 默认无碰撞风险
+                if rel_speed > 0.1:  # 避免除以接近0的速度
+                    # 计算相对位置和相对速度的点积
+                    rel_pos_dot_vel = rel_x * rel_vx + rel_y * rel_vy
+                    if rel_pos_dot_vel < 0:  # 车辆相互靠近
+                        ttc = distance / rel_speed
+                
+                # 根据距离和TTC选择颜色
+                if ttc < 1.0:  # 1秒内可能碰撞
+                    color = (0, 0, 255)  # 红色 - 危险
+                elif ttc < 3.0:  # 3秒内可能碰撞
+                    color = (0, 165, 255)  # 橙色 - 警告
+                elif ttc < 5.0:  # 5秒内可能碰撞
+                    color = (0, 255, 255)  # 黄色 - 注意
+                else:
+                    color = (0, 255, 0)  # 绿色 - 安全
+                
+                # 绘制NPC车辆
+                # 车辆边界框大小随距离变化（越近越大）
+                box_size = max(6, int(15 - distance * 0.2))
+                cv2.rectangle(prediction_img, 
+                            (px - box_size, py - box_size), 
+                            (px + box_size, py + box_size), 
+                            color, 2)
+                
+                # 绘制速度向量箭头
+                if npc_speed > 0.1:  # 只绘制移动中的车辆
+                    # 速度向量长度与速度成正比
+                    arrow_length = int(npc_speed * 1.5)
+                    # 计算速度向量方向
+                    vx_norm = npc_velocity.x / npc_speed
+                    vy_norm = npc_velocity.y / npc_speed
+                    # 计算箭头终点
+                    end_x = px + int(vy_norm * arrow_length * scale)
+                    end_y = py - int(vx_norm * arrow_length * scale)
+                    # 绘制箭头
+                    cv2.arrowedLine(prediction_img, (px, py), (end_x, end_y), color, 2)
+                
+                # 显示车辆信息：距离、速度和TTC
+                cv2.putText(prediction_img, f"ID:{vehicle.id}", (px + box_size + 5, py - 25), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+                cv2.putText(prediction_img, f"{distance:.1f}m", (px + box_size + 5, py - 10), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+                cv2.putText(prediction_img, f"{npc_speed*3.6:.1f}km/h", (px + box_size + 5, py + 5), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+                
+                # 显示碰撞时间
+                if ttc < float('inf'):
+                    cv2.putText(prediction_img, f"TTC:{ttc:.1f}s", (px + box_size + 5, py + 20), 
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+                
+                # 根据车辆当前速度和位置预测未来路径
+                if npc_speed > 0.5:  # 只对移动中的车辆进行预测
+                    # 预测未来3秒，每1秒一个点
+                    prev_pred_x, prev_pred_y = px, py
+                    for t in range(1, 4):
+                        # 简单线性预测
+                        pred_x = rel_x + rel_vx * t
+                        pred_y = rel_y + rel_vy * t
+                        
+                        # 转换为图像坐标
+                        pred_px = center_x + int(pred_y * scale)
+                        pred_py = center_y - int(pred_x * scale)
+                        
+                        # 绘制预测点
+                        cv2.circle(prediction_img, (pred_px, pred_py), 3, color, -1)
+                        
+                        # 连接预测点
+                        if t > 1:
+                            cv2.line(prediction_img, (prev_pred_x, prev_pred_y), (pred_px, pred_py), color, 1, cv2.LINE_AA)
+                        
+                        prev_pred_x, prev_pred_y = pred_px, pred_py
+                
+                npc_count += 1
+            
+            # 显示检测到的NPC车辆数量
+            cv2.putText(prediction_img, f"Detected Vehicles: {npc_count}", (10, 60), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            
+            # 显示OpenCV窗口
+            cv2.imshow(self.window_title, prediction_img)
+            
+            # 处理按键但不阻塞
+            key = cv2.waitKey(1)
+            if key == 27 or key == ord('q'):  # 按ESC或Q退出
+                self.running = False
+                cv2.destroyWindow(self.window_title)
+                
+        except Exception as e:
+            print(f"Error updating motion prediction: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        t_end = self.timer.time()
+        self.time_processing += (t_end - t_start)
+        self.tics_processing += 1
+    
+    def render(self):
+        """兼容原接口，但不执行操作"""
+        pass
+    
+    def destroy(self):
+        """销毁窗口"""
+        try:
+            if self.running:
+                self.running = False
+                cv2.destroyWindow(self.window_title)
+        except Exception as e:
+            print(f"Error closing prediction window: {e}")
 
 def main():
     """Main function"""
@@ -1986,7 +2346,8 @@ def main():
     argparser.add_argument(
         '--sync',
         action='store_true',
-        help='Enable synchronous mode')
+        default=True,  # 修改为默认开启
+        help='Enable synchronous mode (default: True, required for sensor synchronization)')
     argparser.add_argument(
         '--width',
         metavar='W',
