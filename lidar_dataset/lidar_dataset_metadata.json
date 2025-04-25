@@ -1,0 +1,32 @@
+{
+    "info": {
+        "description": "CARLA LiDAR Point Cloud Dataset",
+        "version": "1.0",
+        "year": 2025,
+        "contributor": "CARLA Simulator",
+        "date_created": "2025-04-20 21:45:34"
+    },
+    "lidar_parameters": {
+        "channels": 16,
+        "rotation_frequency": 20.0,
+        "points_per_second": 100000,
+        "range": 50.0,
+        "upper_fov": 10.0,
+        "lower_fov": -30.0,
+        "image_width": 800,
+        "image_height": 600
+    },
+    "lidar_sensor": {
+        "position": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+        }
+    },
+    "files": {
+        "lidar_points_dir": "lidar_points",
+        "images_dir": "images",
+        "annotations_dir": "annotations",
+        "previews_dir": "previews"
+    }
+}

@@ -1,0 +1,5388 @@
+{
+  "frame_id": 1,
+  "timestamp": "2025-04-24 23:57:35",
+  "total_points": 269,
+  "vehicle_count": 19,
+  "points": [
+    {
+      "id": 0,
+      "direction": "front",
+      "depth": 3.352710723876953,
+      "azimuth": 0.8987667560577393,
+      "altitude": -0.021735254675149918,
+      "velocity": -0.017039064317941666,
+      "snr": 0.0,
+      "world_position": [
+        2.08682262402498,
+        2.6230766360390887,
+        -0.07286628385530229
+      ],
+      "image_position": [
+        411,
+        292
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 1,
+      "direction": "front",
+      "depth": 35.13253402709961,
+      "azimuth": -0.020321298390626907,
+      "altitude": -0.013526812195777893,
+      "velocity": 2.410262107849121,
+      "snr": 0.0,
+      "world_position": [
+        35.12206672708573,
+        -0.7138242599009559,
+        -0.4752166973356493
+      ],
+      "image_position": [
+        397,
+        150
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 2,
+      "direction": "front",
+      "depth": 4.201805114746094,
+      "azimuth": 0.6785762310028076,
+      "altitude": -0.007466394919902086,
+      "velocity": -0.005853560287505388,
+      "snr": 0.0,
+      "world_position": [
+        3.270876232277177,
+        2.6373378035873323,
+        -0.03137204487808779
+      ],
+      "image_position": [
+        411,
+        286
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 3,
+      "direction": "front",
+      "depth": 21.618289947509766,
+      "azimuth": 0.12812162935733795,
+      "altitude": -0.011441255919635296,
+      "velocity": -0.008969759568572044,
+      "snr": 0.0,
+      "world_position": [
+        21.439695445167036,
+        2.7620182611635116,
+        -0.24733499163052278
+      ],
+      "image_position": [
+        411,
+        209
+      ],
+      "hit_vehicle_id": 104,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 4,
+      "direction": "front",
+      "depth": 3.5351905822753906,
+      "azimuth": 0.8496391177177429,
+      "altitude": 0.03462279215455055,
+      "velocity": 0.027138948440551758,
+      "snr": 0.0,
+      "world_position": [
+        2.3327256622733072,
+        2.65348602994809,
+        0.12237371633853043
+      ],
+      "image_position": [
+        411,
+        290
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 5,
+      "direction": "front",
+      "depth": 8.312514305114746,
+      "azimuth": -0.9240458011627197,
+      "altitude": -0.013735195621848106,
+      "velocity": -0.03768835961818695,
+      "snr": 0.0,
+      "world_position": [
+        5.008618384312047,
+        -6.633144131422208,
+        -0.1141704201963184
+      ],
+      "image_position": [
+        372,
+        279
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 6,
+      "direction": "front",
+      "depth": 5.663169860839844,
+      "azimuth": -0.4988380968570709,
+      "altitude": -0.03695358708500862,
+      "velocity": -0.10137764364480972,
+      "snr": 0.0,
+      "world_position": [
+        4.969655273936677,
+        -2.7074422378324408,
+        -0.2092268141491653
+      ],
+      "image_position": [
+        389,
+        279
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 7,
+      "direction": "front",
+      "depth": 3.9486358165740967,
+      "azimuth": 0.7297966480255127,
+      "altitude": -0.023360200226306915,
+      "velocity": -0.018312709406018257,
+      "snr": 0.0,
+      "world_position": [
+        2.9421547974535747,
+        2.6319086457136778,
+        -0.09223253422893381
+      ],
+      "image_position": [
+        411,
+        288
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 8,
+      "direction": "front",
+      "depth": 28.179264068603516,
+      "azimuth": 0.03766957297921181,
+      "altitude": -0.019030123949050903,
+      "velocity": -0.05230005085468292,
+      "snr": 0.0,
+      "world_position": [
+        28.154174566082528,
+        1.0610576600867019,
+        -0.5362225215450411
+      ],
+      "image_position": [
+        404,
+        180
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 9,
+      "direction": "front",
+      "depth": 3.695173978805542,
+      "azimuth": 0.7957081198692322,
+      "altitude": -0.004657619632780552,
+      "velocity": -0.003651510691270232,
+      "snr": 0.0,
+      "world_position": [
+        2.585777435028068,
+        2.6396533074585427,
+        -0.017210652643745807
+      ],
+      "image_position": [
+        411,
+        289
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 10,
+      "direction": "front",
+      "depth": 8.561954498291016,
+      "azimuth": -0.9389564990997314,
+      "altitude": -0.00018907361663877964,
+      "velocity": -0.0005186726339161396,
+      "snr": 0.0,
+      "world_position": [
+        5.056950445867336,
+        -6.909002417006811,
+        -0.0016188396928432788
+      ],
+      "image_position": [
+        371,
+        279
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 11,
+      "direction": "front",
+      "depth": 17.08187484741211,
+      "azimuth": -0.2186640501022339,
+      "altitude": 0.004365386441349983,
+      "velocity": 0.003422470297664404,
+      "snr": 0.0,
+      "world_position": [
+        16.674964445878924,
+        -3.705461986465935,
+        0.07456874801341815
+      ],
+      "image_position": [
+        385,
+        229
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 12,
+      "direction": "front",
+      "depth": 3.6952831745147705,
+      "azimuth": 0.7920202612876892,
+      "altitude": -0.03492729738354683,
+      "velocity": -0.027377448976039886,
+      "snr": 0.0,
+      "world_position": [
+        2.594016304485515,
+        2.6286014963528173,
+        -0.12904001428628337
+      ],
+      "image_position": [
+        411,
+        289
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 13,
+      "direction": "front",
+      "depth": 3.444016933441162,
+      "azimuth": 0.874951183795929,
+      "altitude": 0.00927683524787426,
+      "velocity": 0.0072730290703475475,
+      "snr": 0.0,
+      "world_position": [
+        2.2076380758115404,
+        2.643211307827034,
+        0.03194911942269755
+      ],
+      "image_position": [
+        411,
+        291
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 14,
+      "direction": "front",
+      "depth": 4.326568126678467,
+      "azimuth": 0.6575679779052734,
+      "altitude": 0.011825633235275745,
+      "velocity": 0.009271141141653061,
+      "snr": 0.0,
+      "world_position": [
+        3.424157059158434,
+        2.6441865506055673,
+        0.051163215322307914
+      ],
+      "image_position": [
+        411,
+        286
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 15,
+      "direction": "front",
+      "depth": 6.105456829071045,
+      "azimuth": -0.6495050191879272,
+      "altitude": -0.011714916676282883,
+      "velocity": -0.032144948840141296,
+      "snr": 0.0,
+      "world_position": [
+        4.861949948694124,
+        -3.692279811738426,
+        -0.07152328202981381
+      ],
+      "image_position": [
+        385,
+        280
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 16,
+      "direction": "front",
+      "depth": 72.44892120361328,
+      "azimuth": 0.426859050989151,
+      "altitude": 0.06405560672283173,
+      "velocity": 0.17564857006072998,
+      "snr": 0.0,
+      "world_position": [
+        65.81287511138294,
+        29.933333311752083,
+        4.6375866556249745
+      ],
+      "image_position": [
+        528,
+        18
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 17,
+      "direction": "front",
+      "depth": 30.14628791809082,
+      "azimuth": -0.6965850591659546,
+      "altitude": -0.009748113341629505,
+      "velocity": -0.026748353615403175,
+      "snr": 0.0,
+      "world_position": [
+        23.122240356544836,
+        -19.34100099858508,
+        -0.29386477728498134
+      ],
+      "image_position": [
+        318,
+        201
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 18,
+      "direction": "front",
+      "depth": 17.510635375976562,
+      "azimuth": -0.2558116316795349,
+      "altitude": -0.019287532195448875,
+      "velocity": -0.01512050349265337,
+      "snr": 0.0,
+      "world_position": [
+        16.93765763003251,
+        -4.429904420977665,
+        -0.33771600377503097
+      ],
+      "image_position": [
+        382,
+        228
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 19,
+      "direction": "front",
+      "depth": 7.329415321350098,
+      "azimuth": -0.4025645852088928,
+      "altitude": 0.05959917604923248,
+      "velocity": 0.16344352066516876,
+      "snr": 0.0,
+      "world_position": [
+        6.731523393946869,
+        -2.866414074654314,
+        0.4365685538506392
+      ],
+      "image_position": [
+        388,
+        272
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 20,
+      "direction": "front",
+      "depth": 7.292971611022949,
+      "azimuth": -1.027506709098816,
+      "altitude": -0.005080328788608313,
+      "velocity": -0.003982951864600182,
+      "snr": 0.0,
+      "world_position": [
+        3.770087577882614,
+        -6.2427959947601614,
+        -0.03705053425205677
+      ],
+      "image_position": [
+        374,
+        284
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 21,
+      "direction": "front",
+      "depth": 34.95871353149414,
+      "azimuth": -0.018344951793551445,
+      "altitude": -0.004495109431445599,
+      "velocity": 2.4335598945617676,
+      "snr": 0.0,
+      "world_position": [
+        34.95247811368319,
+        -0.6412734651455421,
+        -0.15714271370086733
+      ],
+      "image_position": [
+        398,
+        151
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 22,
+      "direction": "front",
+      "depth": 7.30874490737915,
+      "azimuth": -0.5754040479660034,
+      "altitude": 0.026012245565652847,
+      "velocity": 0.07136959582567215,
+      "snr": 0.0,
+      "world_position": [
+        6.129761580130103,
+        -3.975882143644147,
+        0.19009542801756896
+      ],
+      "image_position": [
+        383,
+        274
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 23,
+      "direction": "front",
+      "depth": 5.754543304443359,
+      "azimuth": -0.5714039206504822,
+      "altitude": -0.024225378409028053,
+      "velocity": -0.0664680078625679,
+      "snr": 0.0,
+      "world_position": [
+        4.838970933028449,
+        -3.1112214199028445,
+        -0.1393923540134326
+      ],
+      "image_position": [
+        387,
+        280
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 24,
+      "direction": "front",
+      "depth": 33.42652893066406,
+      "azimuth": -0.0028471455443650484,
+      "altitude": -0.00900960247963667,
+      "velocity": 2.407569169998169,
+      "snr": 0.0,
+      "world_position": [
+        33.42503679897508,
+        -0.09516620173919768,
+        -0.3011556636191629
+      ],
+      "image_position": [
+        400,
+        157
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 25,
+      "direction": "front",
+      "depth": 29.87673568725586,
+      "azimuth": -0.7584054470062256,
+      "altitude": -0.002612764947116375,
+      "velocity": -0.007169427815824747,
+      "snr": 0.0,
+      "world_position": [
+        21.68845257997433,
+        -20.548096420934566,
+        -0.07806079892364916
+      ],
+      "image_position": [
+        312,
+        208
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 26,
+      "direction": "front",
+      "depth": 5.129081726074219,
+      "azimuth": 0.5399929285049438,
+      "altitude": -0.004796594846993685,
+      "velocity": -0.003760479623451829,
+      "snr": 0.0,
+      "world_position": [
+        4.3992259639331905,
+        2.636984074846605,
+        -0.02460203263902887
+      ],
+      "image_position": [
+        411,
+        282
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 27,
+      "direction": "front",
+      "depth": 3.232877016067505,
+      "azimuth": 0.9482905864715576,
+      "altitude": -0.009586305357515812,
+      "velocity": -0.007515507284551859,
+      "snr": 0.0,
+      "world_position": [
+        1.8849157256456033,
+        2.6263331993693106,
+        -0.03099087159158075
+      ],
+      "image_position": [
+        411,
+        292
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 28,
+      "direction": "front",
+      "depth": 15.29749870300293,
+      "azimuth": -0.22934137284755707,
+      "altitude": -0.07487300038337708,
+      "velocity": -0.20525969564914703,
+      "snr": 0.0,
+      "world_position": [
+        14.855217729520252,
+        -3.467931775635484,
+        -1.1442997756100548
+      ],
+      "image_position": [
+        386,
+        237
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 29,
+      "direction": "front",
+      "depth": 32.05649185180664,
+      "azimuth": 0.40338125824928284,
+      "altitude": 0.0035661556757986546,
+      "velocity": 0.009785161353647709,
+      "snr": 0.0,
+      "world_position": [
+        29.4834185161441,
+        12.583069331305046,
+        0.11431819805684877
+      ],
+      "image_position": [
+        453,
+        174
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 30,
+      "direction": "front",
+      "depth": 28.141517639160156,
+      "azimuth": 0.03819296881556511,
+      "altitude": -0.015549021773040295,
+      "velocity": -0.0427493192255497,
+      "snr": 0.0,
+      "world_position": [
+        28.117595710586226,
+        1.0744169253034341,
+        -0.4375554385524167
+      ],
+      "image_position": [
+        404,
+        180
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 31,
+      "direction": "front",
+      "depth": 19.15528678894043,
+      "azimuth": -0.13389039039611816,
+      "altitude": -0.028490610420703888,
+      "velocity": -0.022333651781082153,
+      "snr": 0.0,
+      "world_position": [
+        18.976143980546272,
+        -2.5560151958103354,
+        -0.5456719847305788
+      ],
+      "image_position": [
+        390,
+        219
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 32,
+      "direction": "front",
+      "depth": 5.908928871154785,
+      "azimuth": -0.5308309197425842,
+      "altitude": 0.0031832291278988123,
+      "velocity": 0.008734761737287045,
+      "snr": 0.0,
+      "world_position": [
+        5.095755941192439,
+        -2.991380617212169,
+        0.018809442731454757
+      ],
+      "image_position": [
+        388,
+        279
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 33,
+      "direction": "front",
+      "depth": 33.78249740600586,
+      "azimuth": -0.0060001094825565815,
+      "altitude": 0.003426975104957819,
+      "velocity": 2.4445929527282715,
+      "snr": 0.0,
+      "world_position": [
+        33.78169093095031,
+        -0.20269627654151487,
+        0.1157715509868021
+      ],
+      "image_position": [
+        400,
+        156
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 34,
+      "direction": "front",
+      "depth": 24.77473258972168,
+      "azimuth": -0.7790684700012207,
+      "altitude": -0.040047455579042435,
+      "velocity": -0.10986093431711197,
+      "snr": 0.0,
+      "world_position": [
+        17.61478099624394,
+        -17.39318832463881,
+        -0.9918998186455068
+      ],
+      "image_position": [
+        326,
+        225
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 35,
+      "direction": "front",
+      "depth": 27.048065185546875,
+      "azimuth": 0.49656179547309875,
+      "altitude": -0.00981168169528246,
+      "velocity": -0.026922395452857018,
+      "snr": 0.0,
+      "world_position": [
+        23.78021028783566,
+        12.88522413250821,
+        -0.2653827479997309
+      ],
+      "image_position": [
+        455,
+        199
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 36,
+      "direction": "front",
+      "depth": 29.8377742767334,
+      "azimuth": -0.7638778686523438,
+      "altitude": -0.00904850848019123,
+      "velocity": -0.024828756228089333,
+      "snr": 0.0,
+      "world_position": [
+        21.54673574277009,
+        -20.638751450579672,
+        -0.26998366936295115
+      ],
+      "image_position": [
+        312,
+        208
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 37,
+      "direction": "front",
+      "depth": 7.879817485809326,
+      "azimuth": -0.36034536361694336,
+      "altitude": -0.02180955559015274,
+      "velocity": -0.0598406158387661,
+      "snr": 0.0,
+      "world_position": [
+        7.371983422183682,
+        -2.777742692365129,
+        -0.17184169379839986
+      ],
+      "image_position": [
+        389,
+        269
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 38,
+      "direction": "front",
+      "depth": 37.60727310180664,
+      "azimuth": 0.28648442029953003,
+      "altitude": 0.05524934083223343,
+      "velocity": 0.15152716636657715,
+      "snr": 0.0,
+      "world_position": [
+        36.01947793604149,
+        10.610911026269427,
+        2.0767201452009534
+      ],
+      "image_position": [
+        445,
+        146
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 39,
+      "direction": "front",
+      "depth": 27.35435676574707,
+      "azimuth": 0.48615968227386475,
+      "altitude": -0.007827797904610634,
+      "velocity": -0.02147926762700081,
+      "snr": 0.0,
+      "world_position": [
+        24.184167725306878,
+        12.78049362074131,
+        -0.2141221898550878
+      ],
+      "image_position": [
+        454,
+        197
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 40,
+      "direction": "front",
+      "depth": 4.1688551902771,
+      "azimuth": 0.6838522553443909,
+      "altitude": -0.019202332943677902,
+      "velocity": -0.015053690411150455,
+      "snr": 0.0,
+      "world_position": [
+        3.230870188535234,
+        2.633329437803431,
+        -0.08004682587383224
+      ],
+      "image_position": [
+        411,
+        287
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 41,
+      "direction": "front",
+      "depth": 3.5040831565856934,
+      "azimuth": 0.8544760346412659,
+      "altitude": 0.00956051517277956,
+      "velocity": 0.0074955797754228115,
+      "snr": 0.0,
+      "world_position": [
+        2.3007241661658204,
+        2.6427532626767936,
+        0.03350032983882067
+      ],
+      "image_position": [
+        411,
+        291
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 42,
+      "direction": "front",
+      "depth": 9.136523246765137,
+      "azimuth": -0.7956523895263672,
+      "altitude": -0.048837099224328995,
+      "velocity": -0.1339556723833084,
+      "snr": 0.0,
+      "world_position": [
+        6.386288224245938,
+        -6.518622737743615,
+        -0.44602394387449223
+      ],
+      "image_position": [
+        373,
+        273
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 43,
+      "direction": "front",
+      "depth": 6.214391231536865,
+      "azimuth": -0.433041512966156,
+      "altitude": -0.05404757708311081,
+      "velocity": -0.14823471009731293,
+      "snr": 0.0,
+      "world_position": [
+        5.6325266051511385,
+        -2.6039588500525954,
+        -0.335709291053487
+      ],
+      "image_position": [
+        389,
+        276
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 44,
+      "direction": "front",
+      "depth": 4.312088966369629,
+      "azimuth": 0.6581218838691711,
+      "altitude": -0.0073923878371715546,
+      "velocity": -0.005795549601316452,
+      "snr": 0.0,
+      "world_position": [
+        3.4113829508742044,
+        2.637339855817573,
+        -0.0318763436994017
+      ],
+      "image_position": [
+        411,
+        286
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 45,
+      "direction": "front",
+      "depth": 6.940096378326416,
+      "azimuth": -0.4125499725341797,
+      "altitude": -0.045396801084280014,
+      "velocity": -0.12452603876590729,
+      "snr": 0.0,
+      "world_position": [
+        6.351281797711591,
+        -2.779741675537253,
+        -0.314949970309902
+      ],
+      "image_position": [
+        389,
+        273
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 46,
+      "direction": "front",
+      "depth": 28.728816986083984,
+      "azimuth": 0.4608667492866516,
+      "altitude": -0.02487444318830967,
+      "velocity": -0.068247951567173,
+      "snr": 0.0,
+      "world_position": [
+        25.72350382681581,
+        12.772459019367375,
+        -0.7145396352065374
+      ],
+      "image_position": [
+        454,
+        190
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 47,
+      "direction": "front",
+      "depth": 31.40141487121582,
+      "azimuth": 0.4129713773727417,
+      "altitude": -0.028811246156692505,
+      "velocity": -0.07904711365699768,
+      "snr": 0.0,
+      "world_position": [
+        28.749635450273303,
+        12.597183677872398,
+        -0.904588733374401
+      ],
+      "image_position": [
+        454,
+        177
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 48,
+      "direction": "front",
+      "depth": 16.966753005981445,
+      "azimuth": 0.17047549784183502,
+      "altitude": -0.06749489903450012,
+      "velocity": -0.18506549298763275,
+      "snr": 0.0,
+      "world_position": [
+        16.68273463770639,
+        2.8718722271909973,
+        -1.1442999976146202
+      ],
+      "image_position": [
+        412,
+        229
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 49,
+      "direction": "front",
+      "depth": 3.1530990600585938,
+      "azimuth": 1.016792893409729,
+      "altitude": 0.016205860301852226,
+      "velocity": 0.01270492747426033,
+      "snr": 0.0,
+      "world_position": [
+        1.658615155726447,
+        2.6811226381720172,
+        0.05109644624084993
+      ],
+      "image_position": [
+        411,
+        293
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 50,
+      "direction": "front",
+      "depth": 3.7284178733825684,
+      "azimuth": 0.7914147973060608,
+      "altitude": 0.027642227709293365,
+      "velocity": 0.02166886068880558,
+      "snr": 0.0,
+      "world_position": [
+        2.6194786668361054,
+        2.6511907377555395,
+        0.10304865156019045
+      ],
+      "image_position": [
+        411,
+        289
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 51,
+      "direction": "front",
+      "depth": 8.326277732849121,
+      "azimuth": -0.925468921661377,
+      "altitude": -0.012584773823618889,
+      "velocity": -0.03453166410326958,
+      "snr": 0.0,
+      "world_position": [
+        5.007526738525333,
+        -6.65136058810347,
+        -0.10478155618618368
+      ],
+      "image_position": [
+        372,
+        279
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 52,
+      "direction": "front",
+      "depth": 26.246654510498047,
+      "azimuth": 0.07311918586492538,
+      "altitude": -0.0050135087221860886,
+      "velocity": -0.013840314000844955,
+      "snr": 0.0,
+      "world_position": [
+        26.176194030401398,
+        1.9174002878767733,
+        -0.13158728006800788
+      ],
+      "image_position": [
+        408,
+        188
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 53,
+      "direction": "front",
+      "depth": 3.3544459342956543,
+      "azimuth": 0.90524822473526,
+      "altitude": 0.011860990896821022,
+      "velocity": 0.009298860095441341,
+      "snr": 0.0,
+      "world_position": [
+        2.0711922970507235,
+        2.638349305801154,
+        0.0397861198027689
+      ],
+      "image_position": [
+        411,
+        292
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 54,
+      "direction": "front",
+      "depth": 3.178105115890503,
+      "azimuth": 0.9743039011955261,
+      "altitude": -0.009029957465827465,
+      "velocity": -0.007079357281327248,
+      "snr": 0.0,
+      "world_position": [
+        1.7852089484001874,
+        2.629174314598031,
+        -0.02869776401146629
+      ],
+      "image_position": [
+        411,
+        293
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 55,
+      "direction": "front",
+      "depth": 33.461585998535156,
+      "azimuth": 0.0012448779307305813,
+      "altitude": -0.0002616945712361485,
+      "velocity": 2.42795991897583,
+      "snr": 0.0,
+      "world_position": [
+        33.46155892468466,
+        0.04165557775135848,
+        -0.008756715300818948
+      ],
+      "image_position": [
+        400,
+        157
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 56,
+      "direction": "front",
+      "depth": 29.72738265991211,
+      "azimuth": -0.7796937227249146,
+      "altitude": -0.00838369969278574,
+      "velocity": -0.023004617542028427,
+      "snr": 0.0,
+      "world_position": [
+        21.13925810188328,
+        -20.89944819466932,
+        -0.249222529356038
+      ],
+      "image_position": [
+        311,
+        210
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 57,
+      "direction": "front",
+      "depth": 7.634400367736816,
+      "azimuth": -0.3802576959133148,
+      "altitude": 0.04495030269026756,
+      "velocity": 0.12330205738544464,
+      "snr": 0.0,
+      "world_position": [
+        7.081907038048831,
+        -2.830720099296254,
+        0.3430530553349896
+      ],
+      "image_position": [
+        388,
+        270
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 58,
+      "direction": "front",
+      "depth": 31.305831909179688,
+      "azimuth": -0.6626240015029907,
+      "altitude": 0.03019510768353939,
+      "velocity": 0.08284283429384232,
+      "snr": 0.0,
+      "world_position": [
+        24.669663000993623,
+        -19.2501831313686,
+        0.945139329406708
+      ],
+      "image_position": [
+        318,
+        195
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 59,
+      "direction": "front",
+      "depth": 4.080820083618164,
+      "azimuth": 0.7005900740623474,
+      "altitude": -0.030788753181695938,
+      "velocity": -0.024134572595357895,
+      "snr": 0.0,
+      "world_position": [
+        3.1181530417688874,
+        2.6295309269942324,
+        -0.12562351272611794
+      ],
+      "image_position": [
+        411,
+        287
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 60,
+      "direction": "front",
+      "depth": 26.323848724365234,
+      "azimuth": 0.07678701728582382,
+      "altitude": -0.0007494632736779749,
+      "velocity": -0.002139695920050144,
+      "snr": 0.0,
+      "world_position": [
+        26.24627353346104,
+        2.019343469099467,
+        -0.019728755993841846
+      ],
+      "image_position": [
+        408,
+        188
+      ],
+      "hit_vehicle_id": 112,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 61,
+      "direction": "front",
+      "depth": 35.65571594238281,
+      "azimuth": -0.030347362160682678,
+      "altitude": -0.015930211171507835,
+      "velocity": 2.4119741916656494,
+      "snr": 0.0,
+      "world_position": [
+        35.63477638998888,
+        -1.0817535697972829,
+        -0.5679790608937121
+      ],
+      "image_position": [
+        396,
+        148
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 62,
+      "direction": "front",
+      "depth": 4.5887603759765625,
+      "azimuth": 0.613011360168457,
+      "altitude": 0.00019941541540902108,
+      "velocity": 0.0001564333215355873,
+      "snr": 0.0,
+      "world_position": [
+        3.7532351126402457,
+        2.6400657453981404,
+        0.0009150695505229685
+      ],
+      "image_position": [
+        411,
+        284
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 63,
+      "direction": "front",
+      "depth": 8.592804908752441,
+      "azimuth": -0.8743385672569275,
+      "altitude": 0.010789750143885612,
+      "velocity": 0.02960670180618763,
+      "snr": 0.0,
+      "world_position": [
+        5.512001260040134,
+        -6.5913232902465735,
+        0.09271241906614944
+      ],
+      "image_position": [
+        372,
+        277
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 64,
+      "direction": "front",
+      "depth": 33.752437591552734,
+      "azimuth": 0.024387797340750694,
+      "altitude": -0.0005011162138544023,
+      "velocity": 2.405819892883301,
+      "snr": 0.0,
+      "world_position": [
+        33.74239647386028,
+        0.8230659103047819,
+        -0.016913893026340245
+      ],
+      "image_position": [
+        403,
+        156
+      ],
+      "hit_vehicle_id": 68,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 65,
+      "direction": "front",
+      "depth": 36.62911605834961,
+      "azimuth": -0.7785212397575378,
+      "altitude": 0.024644706398248672,
+      "velocity": 0.06761827319860458,
+      "snr": 0.0,
+      "world_position": [
+        26.070280567290936,
+        -25.714157328194208,
+        0.9026224347166137
+      ],
+      "image_position": [
+        290,
+        189
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 66,
+      "direction": "front",
+      "depth": 49.560272216796875,
+      "azimuth": -0.6349027752876282,
+      "altitude": 0.0431717149913311,
+      "velocity": 0.11842646449804306,
+      "snr": 0.0,
+      "world_position": [
+        39.8652512190614,
+        -29.36677160219639,
+        2.1389373783642145
+      ],
+      "image_position": [
+        275,
+        129
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 67,
+      "direction": "back",
+      "depth": 52.53248596191406,
+      "azimuth": -2.2428260167413434,
+      "altitude": -0.021735256537795067,
+      "velocity": -0.05963687598705292,
+      "snr": 0.0,
+      "world_position": [
+        -32.69772003981326,
+        -41.1000932780712,
+        -1.1417171587300878
+      ],
+      "image_position": [
+        224,
+        440
+      ],
+      "hit_vehicle_id": 124,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 68,
+      "direction": "back",
+      "depth": 38.58089828491211,
+      "azimuth": 3.1212625560634812,
+      "altitude": -0.013526812195777893,
+      "velocity": -4.854425430297852,
+      "snr": 0.0,
+      "world_position": [
+        -38.56939668877533,
+        0.7842276429824125,
+        -0.521860650559858
+      ],
+      "image_position": [
+        403,
+        465
+      ],
+      "hit_vehicle_id": 64,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 69,
+      "direction": "back",
+      "depth": 51.21094512939453,
+      "azimuth": -2.4630164821916303,
+      "altitude": -0.007466394919902086,
+      "velocity": -0.020487574860453606,
+      "snr": 0.0,
+      "world_position": [
+        -39.86493107892409,
+        -32.143459269241724,
+        -0.38235758798293046
+      ],
+      "image_position": [
+        263,
+        470
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 70,
+      "direction": "back",
+      "depth": 60.55182647705078,
+      "azimuth": -2.29195353587205,
+      "altitude": 0.034622788429260254,
+      "velocity": 0.09498601406812668,
+      "snr": 0.0,
+      "world_position": [
+        -39.955639236809624,
+        -45.4497210054263,
+        2.096054248749184
+      ],
+      "image_position": [
+        206,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 71,
+      "direction": "back",
+      "depth": 83.31414031982422,
+      "azimuth": 2.2175465544038495,
+      "altitude": -0.013735195621848106,
+      "velocity": -0.03768821060657501,
+      "snr": 0.0,
+      "world_position": [
+        -50.20004235352365,
+        66.48227058672222,
+        -1.1443000347989247
+      ],
+      "image_position": [
+        684,
+        515
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 72,
+      "direction": "back",
+      "depth": 5.5910162925720215,
+      "azimuth": 2.642753930883952,
+      "altitude": -0.03695358708500862,
+      "velocity": -6.077017784118652,
+      "snr": 0.0,
+      "world_position": [
+        -4.906335994524852,
+        2.672950207102599,
+        -0.20656108778228355
+      ],
+      "image_position": [
+        411,
+        321
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 73,
+      "direction": "back",
+      "depth": 44.24480438232422,
+      "azimuth": -2.4117960055642804,
+      "altitude": -0.023360200226306915,
+      "velocity": -0.06409459561109543,
+      "snr": 0.0,
+      "world_position": [
+        -32.967097884654315,
+        -29.49076303592415,
+        -1.0334734891266268
+      ],
+      "image_position": [
+        274,
+        441
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 74,
+      "direction": "back",
+      "depth": 60.13460159301758,
+      "azimuth": -3.1039183308654508,
+      "altitude": -0.019030123949050903,
+      "velocity": -0.05221554636955261,
+      "snr": 0.0,
+      "world_position": [
+        -60.08104979275564,
+        -2.264584376983257,
+        -1.1442998518276184
+      ],
+      "image_position": [
+        391,
+        557
+      ],
+      "hit_vehicle_id": 62,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 75,
+      "direction": "back",
+      "depth": 30.99742317199707,
+      "azimuth": -2.345884474115916,
+      "altitude": -0.004657619167119265,
+      "velocity": -0.012780477292835712,
+      "snr": 0.0,
+      "world_position": [
+        -21.691111965247952,
+        -22.14305898601775,
+        -0.14437367030285703
+      ],
+      "image_position": [
+        306,
+        392
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 76,
+      "direction": "back",
+      "depth": 62.47307586669922,
+      "azimuth": 2.9229277839236936,
+      "altitude": 0.004365386441349983,
+      "velocity": 0.011978472582995892,
+      "snr": 0.0,
+      "world_position": [
+        -60.98488242566778,
+        13.551935231869122,
+        0.2727182521556065
+      ],
+      "image_position": [
+        458,
+        561
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 77,
+      "direction": "back",
+      "depth": 28.622968673706055,
+      "azimuth": -2.349572392302104,
+      "altitude": -0.03492730110883713,
+      "velocity": -0.09582110494375229,
+      "snr": 0.0,
+      "world_position": [
+        -20.092762558706077,
+        -20.36065295208386,
+        -0.9995197948096126
+      ],
+      "image_position": [
+        313,
+        386
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 78,
+      "direction": "back",
+      "depth": 50.57132339477539,
+      "azimuth": -2.4840246756845197,
+      "altitude": 0.011825633235275745,
+      "velocity": 0.032448794692754745,
+      "snr": 0.0,
+      "world_position": [
+        -40.023443274922705,
+        -30.906716189731522,
+        0.5980239839577697
+      ],
+      "image_position": [
+        268,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 79,
+      "direction": "back",
+      "depth": 4.776137351989746,
+      "azimuth": 2.4920871575647077,
+      "altitude": -0.011714916676282883,
+      "velocity": -5.451845169067383,
+      "snr": 0.0,
+      "world_position": [
+        -3.8033734402882198,
+        2.888374627705109,
+        -0.05595077131869041
+      ],
+      "image_position": [
+        412,
+        316
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 80,
+      "direction": "back",
+      "depth": 44.73258590698242,
+      "azimuth": -2.71473345358903,
+      "altitude": 0.06405560672283173,
+      "velocity": 0.17564848065376282,
+      "snr": 0.0,
+      "world_position": [
+        -40.63524813441556,
+        -18.481929341284825,
+        2.86341383732672
+      ],
+      "image_position": [
+        321,
+        474
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 81,
+      "direction": "back",
+      "depth": 4.8398871421813965,
+      "azimuth": 2.44500723679597,
+      "altitude": -0.00974811427295208,
+      "velocity": -5.2458319664001465,
+      "snr": 0.0,
+      "world_position": [
+        -3.7121983517899735,
+        3.1051352765302966,
+        -0.04717902571831719
+      ],
+      "image_position": [
+        413,
+        315
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 82,
+      "direction": "back",
+      "depth": 51.43018341064453,
+      "azimuth": 2.885780098038264,
+      "altitude": -0.019287532195448875,
+      "velocity": -0.052921731024980545,
+      "snr": 0.0,
+      "world_position": [
+        -49.74728839180282,
+        13.011041390661983,
+        -0.9918998164217735
+      ],
+      "image_position": [
+        455,
+        513
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 83,
+      "direction": "back",
+      "depth": 50.2203369140625,
+      "azimuth": -2.760729195671626,
+      "altitude": 0.052835747599601746,
+      "velocity": 0.14491400122642517,
+      "snr": 0.0,
+      "world_position": [
+        -46.55668933766637,
+        -18.641962910885656,
+        2.6521946586053824
+      ],
+      "image_position": [
+        320,
+        499
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 84,
+      "direction": "back",
+      "depth": 19.12946891784668,
+      "azimuth": 2.1140855868631085,
+      "altitude": -0.005080328788608313,
+      "velocity": -0.013940362259745598,
+      "snr": 0.0,
+      "world_position": [
+        -9.88893612601546,
+        16.374861181929752,
+        -0.09718357360572803
+      ],
+      "image_position": [
+        470,
+        342
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 85,
+      "direction": "back",
+      "depth": 39.17045211791992,
+      "azimuth": 3.123237956436821,
+      "altitude": -0.004495109431445599,
+      "velocity": -4.830219745635986,
+      "snr": 0.0,
+      "world_position": [
+        -39.16345846831098,
+        0.7189141543013335,
+        -0.17607487578610395
+      ],
+      "image_position": [
+        403,
+        467
+      ],
+      "hit_vehicle_id": 64,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 86,
+      "direction": "back",
+      "depth": 5.312953948974609,
+      "azimuth": 2.5661881883912763,
+      "altitude": 0.026012245565652847,
+      "velocity": -5.638218402862549,
+      "snr": 0.0,
+      "world_position": [
+        -4.455913100354046,
+        2.8901942250676833,
+        0.13818627791322477
+      ],
+      "image_position": [
+        412,
+        319
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 87,
+      "direction": "back",
+      "depth": 4.851162910461426,
+      "azimuth": 2.5701882561021527,
+      "altitude": -0.024225378409028053,
+      "velocity": -5.791164398193359,
+      "snr": 0.0,
+      "world_position": [
+        -4.079320960197959,
+        2.6228064250361793,
+        -0.11750976263741643
+      ],
+      "image_position": [
+        411,
+        317
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 88,
+      "direction": "back",
+      "depth": 52.19561004638672,
+      "azimuth": 2.840683402615138,
+      "altitude": 0.06564043462276459,
+      "velocity": 0.17998814582824707,
+      "snr": 0.0,
+      "world_position": [
+        -49.7429695103487,
+        15.436874331391172,
+        3.4236827078194483
+      ],
+      "image_position": [
+        466,
+        513
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 89,
+      "direction": "back",
+      "depth": 38.3159065246582,
+      "azimuth": 3.13868338114629,
+      "altitude": -0.00900960247963667,
+      "velocity": -4.84324312210083,
+      "snr": 0.0,
+      "world_position": [
+        -38.31418928419069,
+        0.11146672955966318,
+        -0.3452064161534231
+      ],
+      "image_position": [
+        400,
+        464
+      ],
+      "hit_vehicle_id": 64,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 90,
+      "direction": "back",
+      "depth": 5.096014499664307,
+      "azimuth": 2.383186789351054,
+      "altitude": -0.002612764947116375,
+      "velocity": -4.945406913757324,
+      "snr": 0.0,
+      "world_position": [
+        -3.699354115855852,
+        3.504848873457261,
+        -0.013314672905848281
+      ],
+      "image_position": [
+        415,
+        315
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 91,
+      "direction": "back",
+      "depth": 47.06540298461914,
+      "azimuth": 2.824253888922282,
+      "altitude": -0.008250427432358265,
+      "velocity": -0.022638924419879913,
+      "snr": 0.0,
+      "world_position": [
+        -44.71386748766041,
+        14.685756071955009,
+        -0.3883052865697781
+      ],
+      "image_position": [
+        462,
+        491
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 92,
+      "direction": "back",
+      "depth": 46.41292953491211,
+      "azimuth": -2.6015996058755597,
+      "altitude": -0.0047965943813323975,
+      "velocity": -0.013161823153495789,
+      "snr": 0.0,
+      "world_position": [
+        -39.808480540409995,
+        -23.862006286407553,
+        -0.2226231433658149
+      ],
+      "image_position": [
+        298,
+        470
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 93,
+      "direction": "back",
+      "depth": 37.545475006103516,
+      "azimuth": -2.193302186327525,
+      "altitude": -0.009586305357515812,
+      "velocity": -0.026304444298148155,
+      "snr": 0.0,
+      "world_position": [
+        -21.89073932258177,
+        -30.501289893828893,
+        -0.35991687558051
+      ],
+      "image_position": [
+        270,
+        393
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 94,
+      "direction": "back",
+      "depth": 15.297499656677246,
+      "azimuth": 2.9122502227597913,
+      "altitude": -0.07487300038337708,
+      "velocity": -0.20525974035263062,
+      "snr": 0.0,
+      "world_position": [
+        -14.855214986602475,
+        3.4679477083913643,
+        -1.1442998469478158
+      ],
+      "image_position": [
+        414,
+        363
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 95,
+      "direction": "back",
+      "depth": 47.95986557006836,
+      "azimuth": -2.7382113953405103,
+      "altitude": 0.0035661556757986546,
+      "velocity": 0.009785301052033901,
+      "snr": 0.0,
+      "world_position": [
+        -44.110278664215215,
+        -18.825588164109384,
+        0.17103198429711902
+      ],
+      "image_position": [
+        320,
+        489
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 96,
+      "direction": "back",
+      "depth": 56.33142852783203,
+      "azimuth": -3.103395002084323,
+      "altitude": -0.015549021773040295,
+      "velocity": 6.763514041900635,
+      "snr": 0.0,
+      "world_position": [
+        -56.283533462012876,
+        -2.1509450181450087,
+        -0.8758633144745797
+      ],
+      "image_position": [
+        391,
+        541
+      ],
+      "hit_vehicle_id": 62,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 97,
+      "direction": "back",
+      "depth": 40.169532775878906,
+      "azimuth": 3.0077009220891675,
+      "altitude": -0.028490610420703888,
+      "velocity": -0.07816770672798157,
+      "snr": 0.0,
+      "world_position": [
+        -39.79385473514756,
+        5.360136843112348,
+        -1.1442996869234734
+      ],
+      "image_position": [
+        422,
+        470
+      ],
+      "hit_vehicle_id": 64,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 98,
+      "direction": "back",
+      "depth": 5.6237101554870605,
+      "azimuth": 2.6107612570100507,
+      "altitude": 0.0031832291278988123,
+      "velocity": -5.863065719604492,
+      "snr": 0.0,
+      "world_position": [
+        -4.84978699855216,
+        2.8469916608425936,
+        0.017901527741230362
+      ],
+      "image_position": [
+        412,
+        320
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 99,
+      "direction": "back",
+      "depth": 40.048973083496094,
+      "azimuth": 3.1355628158249935,
+      "altitude": 0.003426975104957819,
+      "velocity": -4.809218406677246,
+      "snr": 0.0,
+      "world_position": [
+        -40.04800985029209,
+        0.24148592893186455,
+        0.13724656509499944
+      ],
+      "image_position": [
+        401,
+        471
+      ],
+      "hit_vehicle_id": 64,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 100,
+      "direction": "back",
+      "depth": 4.249453067779541,
+      "azimuth": 2.3625238259607038,
+      "altitude": -0.040047455579042435,
+      "velocity": -4.946028709411621,
+      "snr": 0.0,
+      "world_position": [
+        -3.021350823418275,
+        2.983344582489976,
+        -0.17013429759568077
+      ],
+      "image_position": [
+        412,
+        312
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 101,
+      "direction": "back",
+      "depth": 45.42203140258789,
+      "azimuth": -2.6450308581166944,
+      "altitude": -0.009811683557927608,
+      "velocity": -0.026922833174467087,
+      "snr": 0.0,
+      "world_position": [
+        -39.93429663174759,
+        -21.638259563135595,
+        -0.44565944805859325
+      ],
+      "image_position": [
+        308,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 102,
+      "direction": "back",
+      "depth": 5.060988903045654,
+      "azimuth": 2.377714367704936,
+      "altitude": -0.00904850848019123,
+      "velocity": -4.93707799911499,
+      "snr": 0.0,
+      "world_position": [
+        -3.6546877088973573,
+        3.50068127044666,
+        -0.04579377610329696
+      ],
+      "image_position": [
+        415,
+        315
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 103,
+      "direction": "back",
+      "depth": 47.3925666809082,
+      "azimuth": 2.781246604519435,
+      "altitude": -0.02180955559015274,
+      "velocity": -0.05984072387218475,
+      "snr": 0.0,
+      "world_position": [
+        -44.33822563776687,
+        16.7065538623416,
+        -1.0335288788816932
+      ],
+      "image_position": [
+        471,
+        490
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 104,
+      "direction": "back",
+      "depth": 32.48151397705078,
+      "azimuth": 2.3002305944734296,
+      "altitude": 0.031986527144908905,
+      "velocity": 0.08775611966848373,
+      "snr": 0.0,
+      "world_position": [
+        -21.636165586124967,
+        24.204255755630648,
+        1.0387936691893058
+      ],
+      "image_position": [
+        503,
+        392
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 105,
+      "direction": "back",
+      "depth": 45.16496658325195,
+      "azimuth": -2.6554329713159284,
+      "altitude": -0.007827797904610634,
+      "velocity": -0.021479269489645958,
+      "snr": 0.0,
+      "world_position": [
+        -39.93064565586814,
+        -21.101960913994148,
+        -0.3535386202773923
+      ],
+      "image_position": [
+        310,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 106,
+      "direction": "back",
+      "depth": 51.44157409667969,
+      "azimuth": -2.457740517454692,
+      "altitude": -0.019202332943677902,
+      "velocity": -0.05268798768520355,
+      "snr": 0.0,
+      "world_position": [
+        -39.86731530908417,
+        -32.49395467104704,
+        -0.9877375289975128
+      ],
+      "image_position": [
+        261,
+        470
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 107,
+      "direction": "back",
+      "depth": 61.1147346496582,
+      "azimuth": -2.287116738157817,
+      "altitude": 0.00956051517277956,
+      "velocity": 0.026233669370412827,
+      "snr": 0.0,
+      "world_position": [
+        -40.12694901564954,
+        -46.09227019275005,
+        0.5842794469439649
+      ],
+      "image_position": [
+        203,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 108,
+      "direction": "back",
+      "depth": 4.222101211547852,
+      "azimuth": 2.3459398468309125,
+      "altitude": -0.048837099224328995,
+      "velocity": -4.888008117675781,
+      "snr": 0.0,
+      "world_position": [
+        -2.9511820894490417,
+        3.012338004882188,
+        -0.20611322085549255
+      ],
+      "image_position": [
+        412,
+        312
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 109,
+      "direction": "back",
+      "depth": 6.222728252410889,
+      "azimuth": 2.7085504253679,
+      "altitude": -0.05404757708311081,
+      "velocity": -6.321467876434326,
+      "snr": 0.0,
+      "world_position": [
+        -5.640081150771598,
+        2.6074562688600884,
+        -0.3361596674882556
+      ],
+      "image_position": [
+        411,
+        324
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 110,
+      "direction": "back",
+      "depth": 50.37897491455078,
+      "azimuth": -2.4834709485345563,
+      "altitude": -0.007392387371510267,
+      "velocity": -0.020284557715058327,
+      "snr": 0.0,
+      "world_position": [
+        -39.85585668694492,
+        -30.812547872447688,
+        -0.3724175059854849
+      ],
+      "image_position": [
+        268,
+        470
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 111,
+      "direction": "back",
+      "depth": 21.85706329345703,
+      "azimuth": 2.7290420850091657,
+      "altitude": -0.045396801084280014,
+      "velocity": -0.12452610582113266,
+      "snr": 0.0,
+      "world_position": [
+        -20.00265190360762,
+        8.75449981858984,
+        -0.9918999766104067
+      ],
+      "image_position": [
+        437,
+        385
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 112,
+      "direction": "back",
+      "depth": 39.88037109375,
+      "azimuth": -2.680725785093852,
+      "altitude": -0.02487444318830967,
+      "velocity": -0.06824848055839539,
+      "snr": 0.0,
+      "world_position": [
+        -35.70849500068664,
+        -17.730299441539884,
+        -0.9918997300526768
+      ],
+      "image_position": [
+        324,
+        453
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 113,
+      "direction": "back",
+      "depth": 37.359153747558594,
+      "azimuth": -2.7286209781938275,
+      "altitude": -0.028811246156692505,
+      "velocity": -0.07904715090990067,
+      "snr": 0.0,
+      "world_position": [
+        -34.20425210527023,
+        -14.987236843734706,
+        -1.0762148682485482
+      ],
+      "image_position": [
+        336,
+        446
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 114,
+      "direction": "back",
+      "depth": 16.966753005981445,
+      "azimuth": -2.971116455393382,
+      "altitude": -0.06749489903450012,
+      "velocity": -0.18506555259227753,
+      "snr": 0.0,
+      "world_position": [
+        -16.682732626373443,
+        -2.8718839110198386,
+        -1.1442999976146202
+      ],
+      "image_position": [
+        388,
+        371
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 115,
+      "direction": "back",
+      "depth": 25.005395889282227,
+      "azimuth": -2.1247998793893537,
+      "altitude": 0.016205860301852226,
+      "velocity": 0.012704879976809025,
+      "snr": 0.0,
+      "world_position": [
+        -13.15351525563076,
+        -21.262423658150627,
+        0.4052162150478507
+      ],
+      "image_position": [
+        309,
+        356
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 116,
+      "direction": "back",
+      "depth": 57.06087112426758,
+      "azimuth": -2.350178213911601,
+      "altitude": 0.027642227709293365,
+      "velocity": 0.07584065198898315,
+      "snr": 0.0,
+      "world_position": [
+        -40.08933381363865,
+        -40.57463639962705,
+        1.5770887346570335
+      ],
+      "image_position": [
+        227,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 117,
+      "direction": "back",
+      "depth": 24.927486419677734,
+      "azimuth": 2.317137273150035,
+      "altitude": 0.02364748902618885,
+      "velocity": 0.06488272547721863,
+      "snr": 0.0,
+      "world_position": [
+        -16.919957300568647,
+        18.296098248880188,
+        0.5894175238953062
+      ],
+      "image_position": [
+        478,
+        372
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 118,
+      "direction": "back",
+      "depth": 90.92973327636719,
+      "azimuth": 2.2161233743005475,
+      "altitude": -0.012584773823618889,
+      "velocity": -0.03453172743320465,
+      "snr": 0.0,
+      "world_position": [
+        -54.68624384415158,
+        72.63829365850266,
+        -1.144299921524731
+      ],
+      "image_position": [
+        711,
+        534
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 119,
+      "direction": "back",
+      "depth": 49.562644958496094,
+      "azimuth": -3.068471836047717,
+      "altitude": -0.0050135087221860886,
+      "velocity": 6.779731273651123,
+      "snr": 0.0,
+      "world_position": [
+        -49.42958560727181,
+        -3.6207870434758735,
+        -0.24848171184850593
+      ],
+      "image_position": [
+        385,
+        511
+      ],
+      "hit_vehicle_id": 97,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 120,
+      "direction": "back",
+      "depth": 38.710784912109375,
+      "azimuth": -2.167288752394267,
+      "altitude": -0.00902995653450489,
+      "velocity": -0.02477951906621456,
+      "snr": 0.0,
+      "world_position": [
+        -21.74466768885022,
+        -32.0245547829166,
+        -0.34955195470995903
+      ],
+      "image_position": [
+        263,
+        393
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 121,
+      "direction": "back",
+      "depth": 39.746055603027344,
+      "azimuth": -3.140211585565009,
+      "altitude": -0.0002616945712361485,
+      "velocity": -4.819447994232178,
+      "snr": 0.0,
+      "world_position": [
+        -39.746016337251774,
+        -0.05489198717532857,
+        -0.01040132686064153
+      ],
+      "image_position": [
+        400,
+        470
+      ],
+      "hit_vehicle_id": 64,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 122,
+      "direction": "back",
+      "depth": 5.173526287078857,
+      "azimuth": 2.3618983944230756,
+      "altitude": -0.00838369969278574,
+      "velocity": -4.859879016876221,
+      "snr": 0.0,
+      "world_position": [
+        -3.6789128302489886,
+        3.637182073013427,
+        -0.043372782653162
+      ],
+      "image_position": [
+        415,
+        315
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 123,
+      "direction": "back",
+      "depth": 21.792516708374023,
+      "azimuth": 2.761334153013774,
+      "altitude": 0.04495030269026756,
+      "velocity": 0.1233021542429924,
+      "snr": 0.0,
+      "world_position": [
+        -20.215409250416954,
+        8.08035160259486,
+        0.9792503772582132
+      ],
+      "image_position": [
+        434,
+        386
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 124,
+      "direction": "back",
+      "depth": 5.027844429016113,
+      "azimuth": 2.478968175249644,
+      "altitude": 0.03019511140882969,
+      "velocity": -5.280030250549316,
+      "snr": 0.0,
+      "world_position": [
+        -3.9620471316498413,
+        3.091659899953502,
+        0.15179325410945904
+      ],
+      "image_position": [
+        413,
+        316
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 125,
+      "direction": "back",
+      "depth": 37.17204284667969,
+      "azimuth": -2.4410025795274457,
+      "altitude": -0.03078875131905079,
+      "velocity": -0.08447102457284927,
+      "snr": 0.0,
+      "world_position": [
+        -28.403143511051262,
+        -23.952302303865082,
+        -1.1442999739038149
+      ],
+      "image_position": [
+        298,
+        421
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 126,
+      "direction": "back",
+      "depth": 49.57600402832031,
+      "azimuth": -3.0648033042722425,
+      "altitude": -0.0007494632736779749,
+      "velocity": 6.789623260498047,
+      "snr": 0.0,
+      "world_position": [
+        -49.42989691903869,
+        -3.803167819880679,
+        -0.037155390796603086
+      ],
+      "image_position": [
+        384,
+        511
+      ],
+      "hit_vehicle_id": 97,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 127,
+      "direction": "back",
+      "depth": 48.91018295288086,
+      "azimuth": -2.528581293421336,
+      "altitude": 0.00019941541540902108,
+      "velocity": 0.0005471989279612899,
+      "snr": 0.0,
+      "world_position": [
+        -40.00457661408041,
+        -28.139647319800766,
+        0.009753444386636553
+      ],
+      "image_position": [
+        280,
+        471
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 128,
+      "direction": "back",
+      "depth": 26.356550216674805,
+      "azimuth": 2.267253728704997,
+      "altitude": 0.010789750143885612,
+      "velocity": 0.029606511816382408,
+      "snr": 0.0,
+      "world_position": [
+        -16.906851420296874,
+        20.217449027846964,
+        0.2843750736546328
+      ],
+      "image_position": [
+        486,
+        372
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 129,
+      "direction": "back",
+      "depth": 5.535964012145996,
+      "azimuth": 2.3630710562043866,
+      "altitude": 0.024644706398248672,
+      "velocity": -4.773584842681885,
+      "snr": 0.0,
+      "world_position": [
+        -3.9401465180836426,
+        3.886326412002448,
+        0.13641839751706844
+      ],
+      "image_position": [
+        416,
+        316
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 130,
+      "direction": "back",
+      "depth": 5.090513706207275,
+      "azimuth": 2.5066892226510724,
+      "altitude": 0.0431717149913311,
+      "velocity": -5.356377601623535,
+      "snr": 0.0,
+      "world_position": [
+        -4.094701272618193,
+        3.0163693562530285,
+        0.2196979466467065
+      ],
+      "image_position": [
+        412,
+        317
+      ],
+      "hit_vehicle_id": 46,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 131,
+      "direction": "left",
+      "depth": 24.783578872680664,
+      "azimuth": 2.4695629636433463,
+      "altitude": -0.021735254675149918,
+      "velocity": -0.05963693559169769,
+      "snr": 0.0,
+      "world_position": [
+        -19.390047602379656,
+        15.426007521971641,
+        -0.5386349857821194
+      ],
+      "image_position": [
+        466,
+        383
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 132,
+      "direction": "left",
+      "depth": 10.498489379882812,
+      "azimuth": 1.5504750284042697,
+      "altitude": -0.013526814989745617,
+      "velocity": -0.03711651638150215,
+      "snr": 0.0,
+      "world_position": [
+        0.213308735589897,
+        10.49536148561013,
+        -0.1420067928120885
+      ],
+      "image_position": [
+        444,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 133,
+      "direction": "left",
+      "depth": 11.996050834655762,
+      "azimuth": 1.6989179561522345,
+      "altitude": -0.01144125685095787,
+      "velocity": -0.03139416500926018,
+      "snr": 0.0,
+      "world_position": [
+        -1.5326518215483826,
+        11.89694823510529,
+        -0.13724690442680387
+      ],
+      "image_position": [
+        450,
+        306
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 134,
+      "direction": "left",
+      "depth": 36.6135368347168,
+      "azimuth": 2.42043532530335,
+      "altitude": 0.034622784703969955,
+      "velocity": 0.09498600661754608,
+      "snr": 0.0,
+      "world_position": [
+        -27.481827663973803,
+        24.159757890507024,
+        1.2674093525345347
+      ],
+      "image_position": [
+        503,
+        417
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 135,
+      "direction": "left",
+      "depth": 4.431646823883057,
+      "azimuth": 0.6467504064228873,
+      "altitude": -0.013735193759202957,
+      "velocity": -0.010768018662929535,
+      "snr": 0.0,
+      "world_position": [
+        3.536325315080737,
+        2.670241931197903,
+        -0.060867613920760254
+      ],
+      "image_position": [
+        411,
+        285
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 136,
+      "direction": "left",
+      "depth": 13.321208953857422,
+      "azimuth": 1.071958110728536,
+      "altitude": -0.03695359453558922,
+      "velocity": -0.10137785971164703,
+      "snr": 0.0,
+      "world_position": [
+        6.368590833200502,
+        11.689886343131185,
+        -0.49215452479959065
+      ],
+      "image_position": [
+        450,
+        273
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 137,
+      "direction": "left",
+      "depth": 45.10348892211914,
+      "azimuth": 2.3005929748204093,
+      "altitude": -0.023360200226306915,
+      "velocity": -0.06409530341625214,
+      "snr": 0.0,
+      "world_position": [
+        -30.063107351583962,
+        33.60690944378887,
+        -1.0535307075908016
+      ],
+      "image_position": [
+        544,
+        428
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 138,
+      "direction": "left",
+      "depth": 12.378951072692871,
+      "azimuth": 1.6084674830224852,
+      "altitude": -0.019030127674341202,
+      "velocity": -0.052215494215488434,
+      "snr": 0.0,
+      "world_position": [
+        -0.46613469460986173,
+        12.367928693110597,
+        -0.23555880101689736
+      ],
+      "image_position": [
+        453,
+        301
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 139,
+      "direction": "left",
+      "depth": 26.47376823425293,
+      "azimuth": 2.3665045062687735,
+      "altitude": -0.004657619632780552,
+      "velocity": -0.012780477292835712,
+      "snr": 0.0,
+      "world_position": [
+        -18.91157882186587,
+        18.525587360072244,
+        -0.12330429686508042
+      ],
+      "image_position": [
+        479,
+        381
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 140,
+      "direction": "left",
+      "depth": 4.405267238616943,
+      "azimuth": 0.6318397680905203,
+      "altitude": -0.00018907358753494918,
+      "velocity": -0.00014817634655628353,
+      "snr": 0.0,
+      "world_position": [
+        3.5547962013890935,
+        2.601884454864633,
+        -0.0008329196758928351
+      ],
+      "image_position": [
+        411,
+        285
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 141,
+      "direction": "left",
+      "depth": 12.048981666564941,
+      "azimuth": 1.3521317253496985,
+      "altitude": 0.0043653869070112705,
+      "velocity": 0.011978602968156338,
+      "snr": 0.0,
+      "world_position": [
+        2.6137151052572407,
+        11.761959274229417,
+        0.05259829975218521
+      ],
+      "image_position": [
+        450,
+        289
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 142,
+      "direction": "left",
+      "depth": 26.584556579589844,
+      "azimuth": 2.3628166476872305,
+      "altitude": -0.03492730110883713,
+      "velocity": -0.09582110494375229,
+      "snr": 0.0,
+      "world_position": [
+        -18.91065068794035,
+        18.66183612568951,
+        -0.9283380365065294
+      ],
+      "image_position": [
+        480,
+        381
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 143,
+      "direction": "left",
+      "depth": 24.66529083251953,
+      "azimuth": 2.4457475105908255,
+      "altitude": 0.00927683524787426,
+      "velocity": 0.025455286726355553,
+      "snr": 0.0,
+      "world_position": [
+        -18.93009729607124,
+        15.810617730740523,
+        0.22881255743895323
+      ],
+      "image_position": [
+        467,
+        381
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 144,
+      "direction": "left",
+      "depth": 19.426637649536133,
+      "azimuth": 2.22836430470017,
+      "altitude": 0.01182563230395317,
+      "velocity": 0.032448478043079376,
+      "snr": 0.0,
+      "world_position": [
+        -11.872609535537864,
+        15.374739631147913,
+        0.22972691927583314
+      ],
+      "image_position": [
+        465,
+        350
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 145,
+      "direction": "left",
+      "depth": 15.325053215026855,
+      "azimuth": 0.9212913076069693,
+      "altitude": -0.011714917607605457,
+      "velocity": -0.03214501217007637,
+      "snr": 0.0,
+      "world_position": [
+        9.26783796580423,
+        12.20377832121341,
+        -0.1795276293062598
+      ],
+      "image_position": [
+        452,
+        261
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 146,
+      "direction": "left",
+      "depth": 25.65447998046875,
+      "azimuth": 1.9976555267956595,
+      "altitude": 0.06405560672283173,
+      "velocity": 0.1756470948457718,
+      "snr": 0.0,
+      "world_position": [
+        -10.599527764220293,
+        23.30462544538525,
+        1.6421897253659345
+      ],
+      "image_position": [
+        500,
+        345
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 147,
+      "direction": "left",
+      "depth": 15.449738502502441,
+      "azimuth": 0.8742109696057181,
+      "altitude": -0.009748115204274654,
+      "velocity": -0.02674843743443489,
+      "snr": 0.0,
+      "world_position": [
+        9.912116379795538,
+        11.849965707599221,
+        -0.1506034455709726
+      ],
+      "image_position": [
+        450,
+        258
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 148,
+      "direction": "left",
+      "depth": 12.279274940490723,
+      "azimuth": 1.3149842182782034,
+      "altitude": -0.019287534058094025,
+      "velocity": -0.052921757102012634,
+      "snr": 0.0,
+      "world_position": [
+        3.1064614360919784,
+        11.877474716129953,
+        -0.23682224965258886
+      ],
+      "image_position": [
+        450,
+        287
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 149,
+      "direction": "left",
+      "depth": 25.129167556762695,
+      "azimuth": 1.951659963526998,
+      "altitude": 0.052835747599601746,
+      "velocity": 0.14491397142410278,
+      "snr": 0.0,
+      "world_position": [
+        -9.32803815267428,
+        23.295956088261654,
+        1.3271006939537942
+      ],
+      "image_position": [
+        499,
+        340
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 150,
+      "direction": "left",
+      "depth": 34.0584602355957,
+      "azimuth": 1.1682317415860037,
+      "altitude": 0.059599172323942184,
+      "velocity": 0.1634434312582016,
+      "snr": 0.0,
+      "world_position": [
+        13.319704986247643,
+        31.280165175092467,
+        2.0286545585476174
+      ],
+      "image_position": [
+        534,
+        243
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 151,
+      "direction": "left",
+      "depth": 4.146917343139648,
+      "azimuth": 0.5432894984867911,
+      "altitude": -0.005080328788608313,
+      "velocity": -0.003982903435826302,
+      "snr": 0.0,
+      "world_position": [
+        3.549768492855694,
+        2.1437404818789405,
+        -0.02106761293712107
+      ],
+      "image_position": [
+        409,
+        285
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 152,
+      "direction": "left",
+      "depth": 10.540794372558594,
+      "azimuth": 1.5524513750013451,
+      "altitude": -0.004495109897106886,
+      "velocity": -0.012334582395851612,
+      "snr": 0.0,
+      "world_position": [
+        0.19335756524831785,
+        10.538914261676247,
+        -0.047381869540635335
+      ],
+      "image_position": [
+        445,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 153,
+      "direction": "left",
+      "depth": 37.50377655029297,
+      "azimuth": 0.9953921596196036,
+      "altitude": 0.026012247428297997,
+      "velocity": 0.07136966288089752,
+      "snr": 0.0,
+      "world_position": [
+        20.401672899088982,
+        31.453990217821893,
+        0.9754475024561136
+      ],
+      "image_position": [
+        534,
+        213
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 154,
+      "direction": "left",
+      "depth": 14.569863319396973,
+      "azimuth": 0.9993924061444144,
+      "altitude": -0.024225380271673203,
+      "velocity": -0.06646794825792313,
+      "snr": 0.0,
+      "world_position": [
+        7.877266438731508,
+        12.251735953249066,
+        -0.3529259568348886
+      ],
+      "image_position": [
+        452,
+        267
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 155,
+      "direction": "left",
+      "depth": 32.860225677490234,
+      "azimuth": 1.2698877016690115,
+      "altitude": 0.0656404197216034,
+      "velocity": 0.1799881011247635,
+      "snr": 0.0,
+      "world_position": [
+        9.718406420385078,
+        31.316149415520385,
+        2.1554104037534447
+      ],
+      "image_position": [
+        534,
+        259
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 156,
+      "direction": "left",
+      "depth": 12.315146446228027,
+      "azimuth": 1.5679491812505315,
+      "altitude": -0.00900960061699152,
+      "velocity": -0.02472202479839325,
+      "snr": 0.0,
+      "world_position": [
+        0.03506154388929204,
+        12.314596708820446,
+        -0.11095304994252962
+      ],
+      "image_position": [
+        452,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 157,
+      "direction": "left",
+      "depth": 16.313974380493164,
+      "azimuth": 0.8123907009747366,
+      "altitude": -0.002612764947116375,
+      "velocity": -0.007169438060373068,
+      "snr": 0.0,
+      "world_position": [
+        11.220140826523785,
+        11.842819895178707,
+        -0.0426245319131184
+      ],
+      "image_position": [
+        450,
+        252
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 158,
+      "direction": "left",
+      "depth": 13.074699401855469,
+      "azimuth": 1.25345774094132,
+      "altitude": -0.00825042836368084,
+      "velocity": -0.022638877853751183,
+      "snr": 0.0,
+      "world_position": [
+        4.079679114885861,
+        12.421447045008899,
+        -0.10787064699722376
+      ],
+      "image_position": [
+        453,
+        283
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 159,
+      "direction": "left",
+      "depth": 20.27607536315918,
+      "azimuth": 2.1107892552998404,
+      "altitude": -0.004796594846993685,
+      "velocity": -0.013161822222173214,
+      "snr": 0.0,
+      "world_position": [
+        -10.42441721316933,
+        17.39083952022511,
+        -0.0972557456708057
+      ],
+      "image_position": [
+        474,
+        344
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 160,
+      "direction": "left",
+      "depth": 35.17485809326172,
+      "azimuth": 2.5190870324757437,
+      "altitude": -0.009586305357515812,
+      "velocity": -0.02630443498492241,
+      "snr": 0.0,
+      "world_position": [
+        -28.575446897012323,
+        20.508553782020968,
+        -0.3371917660345625
+      ],
+      "image_position": [
+        487,
+        422
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 161,
+      "direction": "left",
+      "depth": 12.232369422912598,
+      "azimuth": 1.341454685726438,
+      "altitude": -0.07487299293279648,
+      "velocity": -0.20526006817817688,
+      "snr": 0.0,
+      "world_position": [
+        2.773072395687826,
+        11.878706668101827,
+        -0.9150186228019862
+      ],
+      "image_position": [
+        451,
+        289
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 162,
+      "direction": "left",
+      "depth": 12.385764122009277,
+      "azimuth": 1.6089892956104617,
+      "altitude": -0.015549019910395145,
+      "velocity": -0.042664773762226105,
+      "snr": 0.0,
+      "world_position": [
+        -0.4728769349443439,
+        12.37523550168495,
+        -0.1925787326948152
+      ],
+      "image_position": [
+        453,
+        302
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 163,
+      "direction": "left",
+      "depth": 11.997562408447266,
+      "azimuth": 1.4369054893639426,
+      "altitude": -0.028490610420703888,
+      "velocity": -0.07816772907972336,
+      "snr": 0.0,
+      "world_position": [
+        1.6009185318837036,
+        11.885358881755835,
+        -0.3417716353443609
+      ],
+      "image_position": [
+        450,
+        294
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 164,
+      "direction": "left",
+      "depth": 13.617847442626953,
+      "azimuth": 1.0399652878430228,
+      "altitude": 0.003183228662237525,
+      "velocity": 0.008734748698771,
+      "snr": 0.0,
+      "world_position": [
+        6.8940029654550345,
+        11.743790400785464,
+        0.04334864908901743
+      ],
+      "image_position": [
+        450,
+        271
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 165,
+      "direction": "left",
+      "depth": 11.773965835571289,
+      "azimuth": 1.564786291742001,
+      "altitude": 0.0034269753377884626,
+      "velocity": 0.00940360315144062,
+      "snr": 0.0,
+      "world_position": [
+        0.07076110587416902,
+        11.773684058966456,
+        0.04034901156881747
+      ],
+      "image_position": [
+        450,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 166,
+      "direction": "left",
+      "depth": 31.564809799194336,
+      "azimuth": 1.524387457468782,
+      "altitude": 0.02992885373532772,
+      "velocity": 0.08211249858140945,
+      "snr": 0.0,
+      "world_position": [
+        1.4637055565169645,
+        31.51670342438563,
+        0.944557548514253
+      ],
+      "image_position": [
+        535,
+        294
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 167,
+      "direction": "left",
+      "depth": 16.718603134155273,
+      "azimuth": 0.7917279163983206,
+      "altitude": -0.040047455579042435,
+      "velocity": -0.10986083000898361,
+      "snr": 0.0,
+      "world_position": [
+        11.737353540786836,
+        11.886891171768406,
+        -0.669358563476673
+      ],
+      "image_position": [
+        450,
+        250
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 168,
+      "direction": "left",
+      "depth": 21.856332778930664,
+      "azimuth": 2.067358390488897,
+      "altitude": -0.009811685420572758,
+      "velocity": -0.02692284807562828,
+      "snr": 0.0,
+      "world_position": [
+        -10.411978972851522,
+        19.215722473384975,
+        -0.21444402091089682
+      ],
+      "image_position": [
+        482,
+        344
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 169,
+      "direction": "left",
+      "depth": 16.39923095703125,
+      "azimuth": 0.806918398537908,
+      "altitude": -0.00904850848019123,
+      "velocity": -0.024829261004924774,
+      "snr": 0.0,
+      "world_position": [
+        11.343328414010925,
+        11.842367073524336,
+        -0.14838655549325772
+      ],
+      "image_position": [
+        450,
+        252
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 170,
+      "direction": "left",
+      "depth": 13.087544441223145,
+      "azimuth": 1.2104507843640189,
+      "altitude": -0.02180955559015274,
+      "velocity": -0.059840720146894455,
+      "snr": 0.0,
+      "world_position": [
+        4.613539368171412,
+        12.244084882799374,
+        -0.28541090050521994
+      ],
+      "image_position": [
+        452,
+        281
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 171,
+      "direction": "left",
+      "depth": 92.63062286376953,
+      "azimuth": 0.7294345060971121,
+      "altitude": 0.031986527144908905,
+      "velocity": 0.08775616437196732,
+      "snr": 0.0,
+      "world_position": [
+        69.02556359750794,
+        61.701927766975416,
+        2.9624267105262194
+      ],
+      "image_position": [
+        664,
+        5
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 172,
+      "direction": "left",
+      "depth": 32.92658996582031,
+      "azimuth": 1.8572813729431967,
+      "altitude": 0.05524933338165283,
+      "velocity": 0.15152083337306976,
+      "snr": 0.0,
+      "world_position": [
+        -9.29027366540547,
+        31.5364094440206,
+        1.8182467869408927
+      ],
+      "image_position": [
+        535,
+        339
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 173,
+      "direction": "left",
+      "depth": 22.2779483795166,
+      "azimuth": 2.0569561580803732,
+      "altitude": -0.007827798835933208,
+      "velocity": -0.02147926576435566,
+      "snr": 0.0,
+      "world_position": [
+        -10.408698689840673,
+        19.696079946928712,
+        -0.17438551748376419
+      ],
+      "image_position": [
+        484,
+        344
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 174,
+      "direction": "left",
+      "depth": 56.42533874511719,
+      "azimuth": 2.254648641743932,
+      "altitude": -0.0192023366689682,
+      "velocity": -0.05268797650933266,
+      "snr": 0.0,
+      "world_position": [
+        -35.64204310995578,
+        43.72973577621319,
+        -1.0834317661288644
+      ],
+      "image_position": [
+        587,
+        452
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 175,
+      "direction": "left",
+      "depth": 11.796646118164062,
+      "azimuth": 1.5051056976106505,
+      "altitude": 0.004530566278845072,
+      "velocity": 0.012431804090738297,
+      "snr": 0.0,
+      "world_position": [
+        0.7743639420269399,
+        11.771081671704401,
+        0.053445304269324555
+      ],
+      "image_position": [
+        450,
+        297
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 176,
+      "direction": "left",
+      "depth": 35.7170295715332,
+      "azimuth": 1.4197897920992713,
+      "altitude": 0.04690639302134514,
+      "velocity": 0.12866400182247162,
+      "snr": 0.0,
+      "world_position": [
+        5.36712041890804,
+        35.27173736270926,
+        1.6747427380875055
+      ],
+      "image_position": [
+        551,
+        277
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 177,
+      "direction": "left",
+      "depth": 25.09380531311035,
+      "azimuth": 2.4252723018315177,
+      "altitude": 0.00956051517277956,
+      "velocity": 0.02623368427157402,
+      "snr": 0.0,
+      "world_position": [
+        -18.92555897206678,
+        16.4761866878677,
+        0.23990605169297982
+      ],
+      "image_position": [
+        470,
+        381
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 178,
+      "direction": "left",
+      "depth": 10.308076858520508,
+      "azimuth": 0.775143758454595,
+      "altitude": -0.048837095499038696,
+      "velocity": -0.13395574688911438,
+      "snr": 0.0,
+      "world_position": [
+        7.354490779604669,
+        7.2051847376602485,
+        -0.5032164445482118
+      ],
+      "image_position": [
+        430,
+        269
+      ],
+      "hit_vehicle_id": 129,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 179,
+      "direction": "left",
+      "depth": 13.094758033752441,
+      "azimuth": 1.1377545158055167,
+      "altitude": -0.054047588258981705,
+      "velocity": -0.14823465049266815,
+      "snr": 0.0,
+      "world_position": [
+        5.486978814400779,
+        11.868670648247889,
+        -0.7073955726890937
+      ],
+      "image_position": [
+        450,
+        277
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 180,
+      "direction": "left",
+      "depth": 19.434247970581055,
+      "azimuth": 2.2289183298733573,
+      "altitude": -0.007392387371510267,
+      "velocity": -0.020284859463572502,
+      "snr": 0.0,
+      "world_position": [
+        -11.886286448138875,
+        15.374834934332895,
+        -0.14366418078540225
+      ],
+      "image_position": [
+        465,
+        350
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 181,
+      "direction": "left",
+      "depth": 12.988697052001953,
+      "azimuth": 1.158246205249105,
+      "altitude": -0.045396797358989716,
+      "velocity": -0.12452616542577744,
+      "snr": 0.0,
+      "world_position": [
+        5.202411153530473,
+        11.886703771702676,
+        -0.5894427386059795
+      ],
+      "image_position": [
+        450,
+        278
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 182,
+      "direction": "left",
+      "depth": 42.921836853027344,
+      "azimuth": 2.031663076081548,
+      "altitude": -0.02487444505095482,
+      "velocity": -0.06824900209903717,
+      "snr": 0.0,
+      "world_position": [
+        -19.082491370299405,
+        38.43179602649368,
+        -1.0675467757101849
+      ],
+      "image_position": [
+        564,
+        381
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 183,
+      "direction": "left",
+      "depth": 36.548179626464844,
+      "azimuth": 1.9837678531792502,
+      "altitude": -0.028811248019337654,
+      "velocity": -0.07904703915119171,
+      "snr": 0.0,
+      "world_position": [
+        -14.661896296183865,
+        33.46176521915775,
+        -1.0528529936577498
+      ],
+      "image_position": [
+        543,
+        362
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 184,
+      "direction": "left",
+      "depth": 11.925185203552246,
+      "azimuth": 1.741271467008863,
+      "altitude": -0.06749489903450012,
+      "velocity": -0.18506556749343872,
+      "snr": 0.0,
+      "world_position": [
+        -2.0185086109254846,
+        11.725561893552372,
+        -0.8042781901267727
+      ],
+      "image_position": [
+        450,
+        308
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 185,
+      "direction": "left",
+      "depth": 33.62838363647461,
+      "azimuth": 2.5875892202046256,
+      "altitude": 0.016205860301852226,
+      "velocity": 0.04446696490049362,
+      "snr": 0.0,
+      "world_position": [
+        -28.594667955408298,
+        17.689436868185023,
+        0.544953033164734
+      ],
+      "image_position": [
+        475,
+        422
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 186,
+      "direction": "left",
+      "depth": 33.026123046875,
+      "azimuth": 2.3622108856823782,
+      "altitude": 0.027642227709293365,
+      "velocity": 0.07584065198898315,
+      "snr": 0.0,
+      "world_position": [
+        -23.484098047338087,
+        23.203205376410732,
+        0.9127993593576975
+      ],
+      "image_position": [
+        499,
+        400
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 187,
+      "direction": "left",
+      "depth": 93.38956451416016,
+      "azimuth": 0.7463411251690726,
+      "altitude": 0.023647490888834,
+      "velocity": 0.06488270312547684,
+      "snr": 0.0,
+      "world_position": [
+        68.54539348157893,
+        63.389774755401454,
+        2.2082230547364254
+      ],
+      "image_position": [
+        671,
+        7
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 188,
+      "direction": "left",
+      "depth": 4.427377223968506,
+      "azimuth": 0.64532728592423,
+      "altitude": -0.01258477196097374,
+      "velocity": -0.009866183623671532,
+      "snr": 0.0,
+      "world_position": [
+        3.536764682203254,
+        2.6626791745281646,
+        -0.05571606203599782
+      ],
+      "image_position": [
+        411,
+        285
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 189,
+      "direction": "left",
+      "depth": 12.475062370300293,
+      "azimuth": 1.643915512659822,
+      "altitude": -0.005013507325202227,
+      "velocity": -0.013756966218352318,
+      "snr": 0.0,
+      "world_position": [
+        -0.9113423644409498,
+        12.441572430422115,
+        -0.06254355456704744
+      ],
+      "image_position": [
+        453,
+        303
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 190,
+      "direction": "left",
+      "depth": 24.986434936523438,
+      "azimuth": 2.4760445515301566,
+      "altitude": 0.011860990896821022,
+      "velocity": 0.03254573792219162,
+      "snr": 0.0,
+      "world_position": [
+        -19.652408940394626,
+        15.427797193622956,
+        0.29635692847658
+      ],
+      "image_position": [
+        466,
+        384
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 191,
+      "direction": "left",
+      "depth": 34.550621032714844,
+      "azimuth": 2.5451003471997122,
+      "altitude": -0.00902995653450489,
+      "velocity": -0.024777879938483238,
+      "snr": 0.0,
+      "world_position": [
+        -28.58294783014839,
+        19.407812127918564,
+        -0.3119863662245334
+      ],
+      "image_position": [
+        483,
+        422
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 192,
+      "direction": "left",
+      "depth": 12.544389724731445,
+      "azimuth": 1.5720412047256271,
+      "altitude": -0.000261694542132318,
+      "velocity": -0.0007180854445323348,
+      "snr": 0.0,
+      "world_position": [
+        -0.015616229354602988,
+        12.544379575035348,
+        -0.003282798287873072
+      ],
+      "image_position": [
+        453,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 193,
+      "direction": "left",
+      "depth": 17.23981475830078,
+      "azimuth": 0.7911024252560477,
+      "altitude": -0.00838369969278574,
+      "velocity": -0.023004647344350815,
+      "snr": 0.0,
+      "world_position": [
+        12.12022883800888,
+        12.259297548878799,
+        -0.14453173657589594
+      ],
+      "image_position": [
+        452,
+        249
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 194,
+      "direction": "left",
+      "depth": 33.90030288696289,
+      "azimuth": 1.1905379752304892,
+      "altitude": 0.04495031014084816,
+      "velocity": 0.12330223619937897,
+      "snr": 0.0,
+      "world_position": [
+        12.569739797199942,
+        31.44696623764624,
+        1.5233160233024912
+      ],
+      "image_position": [
+        534,
+        247
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 195,
+      "direction": "left",
+      "depth": 39.77653121948242,
+      "azimuth": 0.9081722060826163,
+      "altitude": 0.03019511140882969,
+      "velocity": 0.08284300565719604,
+      "snr": 0.0,
+      "world_position": [
+        24.458881316994514,
+        31.344751737958724,
+        1.2008742904110203
+      ],
+      "image_position": [
+        534,
+        196
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 196,
+      "direction": "left",
+      "depth": 33.44878387451172,
+      "azimuth": 2.2713864604618887,
+      "altitude": -0.03078875131905079,
+      "velocity": -0.08447103202342987,
+      "snr": 0.0,
+      "world_position": [
+        -21.5531721781049,
+        25.558201490908353,
+        -1.0296835896964154
+      ],
+      "image_position": [
+        509,
+        392
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 197,
+      "direction": "left",
+      "depth": 12.427736282348633,
+      "azimuth": 1.6475841189411025,
+      "altitude": -0.0007494633900932968,
+      "velocity": -0.0020564740989357233,
+      "snr": 0.0,
+      "world_position": [
+        -0.9533606238794538,
+        12.391111567223364,
+        -0.00931413249340356
+      ],
+      "image_position": [
+        453,
+        304
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 198,
+      "direction": "left",
+      "depth": 10.437405586242676,
+      "azimuth": 1.5404469995435814,
+      "altitude": -0.015930211171507835,
+      "velocity": -0.04371076077222824,
+      "snr": 0.0,
+      "world_position": [
+        0.3166794254192134,
+        10.431275382898802,
+        -0.1662630427228136
+      ],
+      "image_position": [
+        444,
+        299
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 199,
+      "direction": "left",
+      "depth": 18.78852081298828,
+      "azimuth": 2.1838076869633536,
+      "altitude": 0.00019941540085710585,
+      "velocity": 0.0005471402546390891,
+      "snr": 0.0,
+      "world_position": [
+        -10.809657977512984,
+        15.367491490525383,
+        0.003746720384601807
+      ],
+      "image_position": [
+        465,
+        346
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 200,
+      "direction": "left",
+      "depth": 4.691436290740967,
+      "azimuth": 0.6964576403286795,
+      "altitude": 0.010789751075208187,
+      "velocity": 0.00845906138420105,
+      "snr": 0.0,
+      "world_position": [
+        3.5986824673184308,
+        3.009401392679209,
+        0.05061844759307048
+      ],
+      "image_position": [
+        412,
+        285
+      ],
+      "hit_vehicle_id": 51,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 201,
+      "direction": "left",
+      "depth": 11.914159774780273,
+      "azimuth": 1.5951841241356473,
+      "altitude": -0.0005011162138544023,
+      "velocity": -0.001375047955662012,
+      "snr": 0.0,
+      "world_position": [
+        -0.29053127596924544,
+        11.910615394313508,
+        -0.0059703783877165925
+      ],
+      "image_position": [
+        451,
+        301
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 202,
+      "direction": "left",
+      "depth": 43.521446228027344,
+      "azimuth": 0.7922750274327139,
+      "altitude": 0.024644702672958374,
+      "velocity": 0.06761810928583145,
+      "snr": 0.0,
+      "world_position": [
+        30.552672398822537,
+        30.97580202184266,
+        1.0724645322392257
+      ],
+      "image_position": [
+        532,
+        170
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 203,
+      "direction": "left",
+      "depth": 41.586273193359375,
+      "azimuth": 0.9358934322979788,
+      "altitude": 0.0431717112660408,
+      "velocity": 0.11842642724514008,
+      "snr": 0.0,
+      "world_position": [
+        24.641809454576325,
+        33.45112947619777,
+        1.7947929361700552
+      ],
+      "image_position": [
+        543,
+        195
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 204,
+      "direction": "right",
+      "depth": 8.884780883789062,
+      "azimuth": -0.672029391923223,
+      "altitude": -0.021735254675149918,
+      "velocity": -0.059636764228343964,
+      "snr": 0.0,
+      "world_position": [
+        6.95123032893997,
+        -5.530139376001423,
+        -0.19309777048754936
+      ],
+      "image_position": [
+        377,
+        271
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 205,
+      "direction": "right",
+      "depth": 6.76512336730957,
+      "azimuth": -0.8922196785595755,
+      "altitude": -0.007466394454240799,
+      "velocity": -0.005853595677763224,
+      "snr": 0.0,
+      "world_position": [
+        4.246252348176242,
+        -5.266277988178582,
+        -0.05051061028599565
+      ],
+      "image_position": [
+        378,
+        282
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 206,
+      "direction": "right",
+      "depth": 41.80614471435547,
+      "azimuth": -1.4426733116295676,
+      "altitude": -0.01144125685095787,
+      "velocity": -0.03139413893222809,
+      "snr": 0.0,
+      "world_position": [
+        5.3413372437820765,
+        -41.46076551660225,
+        -0.4783044042701347
+      ],
+      "image_position": [
+        223,
+        278
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 207,
+      "direction": "right",
+      "depth": 8.03675365447998,
+      "azimuth": -0.7211569110539298,
+      "altitude": 0.034622788429260254,
+      "velocity": 0.027138927951455116,
+      "snr": 0.0,
+      "world_position": [
+        6.0323251722752795,
+        -5.303118658473361,
+        0.27819923235524113
+      ],
+      "image_position": [
+        378,
+        275
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 208,
+      "direction": "right",
+      "depth": 52.46826171875,
+      "azimuth": -2.4948420683529715,
+      "altitude": -0.013735193759202957,
+      "velocity": -0.0376882366836071,
+      "snr": 0.0,
+      "world_position": [
+        -41.86814168087467,
+        -31.614203758618387,
+        -0.7206390816567818
+      ],
+      "image_position": [
+        265,
+        479
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 209,
+      "direction": "right",
+      "depth": 30.9729061126709,
+      "azimuth": -2.069634542861257,
+      "altitude": -0.03695358708500862,
+      "velocity": -0.10137764364480972,
+      "snr": 0.0,
+      "world_position": [
+        -14.807497328832957,
+        -27.179946919793938,
+        -1.1442995054247422
+      ],
+      "image_position": [
+        284,
+        363
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 210,
+      "direction": "right",
+      "depth": 7.065229892730713,
+      "azimuth": -0.8409993211415152,
+      "altitude": -0.023360200226306915,
+      "velocity": -0.018312763422727585,
+      "snr": 0.0,
+      "world_position": [
+        4.709233248250122,
+        -5.264348078557292,
+        -0.1650301745178286
+      ],
+      "image_position": [
+        378,
+        280
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 211,
+      "direction": "right",
+      "depth": 41.47190475463867,
+      "azimuth": -1.5331220040705542,
+      "altitude": -0.019030123949050903,
+      "velocity": -0.05221552401781082,
+      "snr": 0.0,
+      "world_position": [
+        1.5617735064864449,
+        -41.43497268722542,
+        -0.7891678535915077
+      ],
+      "image_position": [
+        223,
+        294
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 212,
+      "direction": "right",
+      "depth": 7.516668319702148,
+      "azimuth": -0.775087789693151,
+      "altitude": -0.004657619167119265,
+      "velocity": -0.003651547944173217,
+      "snr": 0.0,
+      "world_position": [
+        5.369545957653859,
+        -5.259948018881343,
+        -0.0350096518585771
+      ],
+      "image_position": [
+        378,
+        277
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 213,
+      "direction": "right",
+      "depth": 52.044837951660156,
+      "azimuth": -2.509752885499273,
+      "altitude": -0.00018907358753494918,
+      "velocity": -0.0005188189097680151,
+      "snr": 0.0,
+      "world_position": [
+        -41.99717797609867,
+        -30.739259955745073,
+        -0.009840304165565583
+      ],
+      "image_position": [
+        269,
+        479
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 214,
+      "direction": "right",
+      "depth": 7.496096611022949,
+      "azimuth": -0.7787757674839835,
+      "altitude": -0.03492729738354683,
+      "velocity": -0.027377473190426826,
+      "snr": 0.0,
+      "world_position": [
+        5.332272422177049,
+        -5.262111193743703,
+        -0.261765166049765
+      ],
+      "image_position": [
+        378,
+        278
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 215,
+      "direction": "right",
+      "depth": 9.340713500976562,
+      "azimuth": -0.6958447257664542,
+      "altitude": 0.00927683524787426,
+      "velocity": 0.025455331429839134,
+      "snr": 0.0,
+      "world_position": [
+        7.168805679476966,
+        -5.9874573433480665,
+        0.0866510173739835
+      ],
+      "image_position": [
+        375,
+        270
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 216,
+      "direction": "right",
+      "depth": 6.6687750816345215,
+      "azimuth": -0.9132278720524649,
+      "altitude": 0.011825633235275745,
+      "velocity": 0.009271102026104927,
+      "snr": 0.0,
+      "world_position": [
+        4.0756312514028465,
+        -5.277837813903919,
+        0.07886065016145877
+      ],
+      "image_position": [
+        378,
+        283
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 217,
+      "direction": "right",
+      "depth": 24.770368576049805,
+      "azimuth": -2.2203012267735343,
+      "altitude": -0.011714916676282883,
+      "velocity": -0.00918437261134386,
+      "snr": 0.0,
+      "world_position": [
+        -14.979897496046268,
+        -19.725354957355602,
+        -0.2901761665419569
+      ],
+      "image_position": [
+        316,
+        364
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 218,
+      "direction": "right",
+      "depth": 45.743186950683594,
+      "azimuth": -1.1439368287709097,
+      "altitude": 0.06405560672283173,
+      "velocity": 0.175648495554924,
+      "snr": 0.0,
+      "world_position": [
+        18.89948649038501,
+        -41.55327626508328,
+        2.9281042403936945
+      ],
+      "image_position": [
+        222,
+        219
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 219,
+      "direction": "right",
+      "depth": 59.33214569091797,
+      "azimuth": -1.8266086737301688,
+      "altitude": -0.019287534058094025,
+      "velocity": -0.052921731024980545,
+      "snr": 0.0,
+      "world_position": [
+        -15.010103725184466,
+        -57.39068632058702,
+        -1.1442998293738682
+      ],
+      "image_position": [
+        154,
+        364
+      ],
+      "hit_vehicle_id": 93,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 220,
+      "direction": "right",
+      "depth": 44.80652618408203,
+      "azimuth": -1.189932064214025,
+      "altitude": 0.052835747599601746,
+      "velocity": 0.1449139267206192,
+      "snr": 0.0,
+      "world_position": [
+        16.632371050791203,
+        -41.53781069412876,
+        2.3662849896733507
+      ],
+      "image_position": [
+        222,
+        229
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 221,
+      "direction": "right",
+      "depth": 24.201202392578125,
+      "azimuth": -1.9733610908177237,
+      "altitude": 0.05959918349981308,
+      "velocity": 0.16344352066516876,
+      "snr": 0.0,
+      "world_position": [
+        -9.464697144324665,
+        -22.2270045355273,
+        1.4415181547210663
+      ],
+      "image_position": [
+        305,
+        340
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 222,
+      "direction": "right",
+      "depth": 48.86068344116211,
+      "azimuth": -2.5983030358937125,
+      "altitude": -0.005080328788608313,
+      "velocity": -0.013940390199422836,
+      "snr": 0.0,
+      "world_position": [
+        -41.82482740323547,
+        -25.25843586309284,
+        -0.24822726893376126
+      ],
+      "image_position": [
+        292,
+        479
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 223,
+      "direction": "right",
+      "depth": 61.419734954833984,
+      "azimuth": -1.5891510239478688,
+      "altitude": -0.004495109431445599,
+      "velocity": -0.012334540486335754,
+      "snr": 0.0,
+      "world_position": [
+        -1.127265947289539,
+        -61.4087688290396,
+        -0.2760875000990952
+      ],
+      "image_position": [
+        137,
+        304
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 224,
+      "direction": "right",
+      "depth": 41.16074752807617,
+      "azimuth": -2.1422002474453787,
+      "altitude": -0.024225376546382904,
+      "velocity": -0.0664680004119873,
+      "snr": 0.0,
+      "world_position": [
+        -22.25375544145473,
+        -34.61189712922645,
+        -0.9970370794502171
+      ],
+      "image_position": [
+        252,
+        395
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 225,
+      "direction": "right",
+      "depth": 55.4260139465332,
+      "azimuth": -1.5737055992383997,
+      "altitude": -0.00900960247963667,
+      "velocity": -0.024722034111618996,
+      "snr": 0.0,
+      "world_position": [
+        -0.16124260307327934,
+        -55.423529866088955,
+        -0.49935959687758047
+      ],
+      "image_position": [
+        163,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 226,
+      "direction": "right",
+      "depth": 61.0014533996582,
+      "azimuth": -2.3292017141964774,
+      "altitude": -0.002612764947116375,
+      "velocity": -0.007169421762228012,
+      "snr": 0.0,
+      "world_position": [
+        -41.95450535613344,
+        -44.28285666578384,
+        -0.15938227782736866
+      ],
+      "image_position": [
+        211,
+        479
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 227,
+      "direction": "right",
+      "depth": 6.145142078399658,
+      "azimuth": -1.0308028618481497,
+      "altitude": -0.0047965943813323975,
+      "velocity": -0.0037604826502501965,
+      "snr": 0.0,
+      "world_position": [
+        3.159367927042902,
+        -5.270701722909571,
+        -0.02947564093953199
+      ],
+      "image_position": [
+        378,
+        287
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 228,
+      "direction": "right",
+      "depth": 9.461507797241211,
+      "azimuth": -0.6225053826954703,
+      "altitude": -0.009586305357515812,
+      "velocity": -0.02630430832505226,
+      "snr": 0.0,
+      "world_position": [
+        7.686366755824941,
+        -5.516490686153663,
+        -0.0906995136993234
+      ],
+      "image_position": [
+        377,
+        268
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 229,
+      "direction": "right",
+      "depth": 13.260150909423828,
+      "azimuth": -1.800138489403997,
+      "altitude": -0.07487300038337708,
+      "velocity": -0.2052597552537918,
+      "snr": 0.0,
+      "world_position": [
+        -3.006076689427554,
+        -12.876771320113727,
+        -0.9918999180716089
+      ],
+      "image_position": [
+        345,
+        312
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 230,
+      "direction": "right",
+      "depth": 67.51521301269531,
+      "azimuth": -1.167414621510778,
+      "altitude": 0.003566155908629298,
+      "velocity": 0.009785841219127178,
+      "snr": 0.0,
+      "world_position": [
+        26.50163654967088,
+        -62.095968295047726,
+        0.2407692654775951
+      ],
+      "image_position": [
+        134,
+        187
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 231,
+      "direction": "right",
+      "depth": 41.47037887573242,
+      "azimuth": -1.5325986752894263,
+      "altitude": -0.015549021773040295,
+      "velocity": -0.04266481474041939,
+      "snr": 0.0,
+      "world_position": [
+        1.5834944572596947,
+        -41.435119224455924,
+        -0.6447978409897692
+      ],
+      "image_position": [
+        223,
+        294
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 232,
+      "direction": "right",
+      "depth": 34.81968307495117,
+      "azimuth": -1.7046880582955222,
+      "altitude": -0.028490610420703888,
+      "velocity": -0.07816770672798157,
+      "snr": 0.0,
+      "world_position": [
+        -4.646264300779078,
+        -34.49403850274597,
+        -0.9918998227772989
+      ],
+      "image_position": [
+        253,
+        319
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 233,
+      "direction": "right",
+      "depth": 51.3943977355957,
+      "azimuth": -2.1016273657467703,
+      "altitude": 0.003183229360729456,
+      "velocity": 0.0024956525303423405,
+      "snr": 0.0,
+      "world_position": [
+        -26.0182919429031,
+        -44.3216181795958,
+        0.1635998795570853
+      ],
+      "image_position": [
+        211,
+        411
+      ],
+      "hit_vehicle_id": 124,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 234,
+      "direction": "right",
+      "depth": 61.4154052734375,
+      "azimuth": -1.5768261645596962,
+      "altitude": 0.003426975104957819,
+      "velocity": 0.009403621777892113,
+      "snr": 0.0,
+      "world_position": [
+        -0.3703205113964513,
+        -61.41392814798228,
+        0.2104686529695356
+      ],
+      "image_position": [
+        137,
+        301
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 235,
+      "direction": "right",
+      "depth": 28.58123207092285,
+      "azimuth": -2.3498647967961173,
+      "altitude": -0.040047455579042435,
+      "velocity": -0.10986094921827316,
+      "snr": 0.0,
+      "world_position": [
+        -20.06555470011442,
+        -20.321193849777313,
+        -1.1442996934536036
+      ],
+      "image_position": [
+        313,
+        386
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 236,
+      "direction": "right",
+      "depth": 6.164097309112549,
+      "azimuth": -1.0742341438916068,
+      "altitude": -0.009811683557927608,
+      "velocity": -0.007692232728004456,
+      "snr": 0.0,
+      "world_position": [
+        2.936470008005403,
+        -5.419370977746381,
+        -0.06047920182632001
+      ],
+      "image_position": [
+        377,
+        288
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 237,
+      "direction": "right",
+      "depth": 30.790695190429688,
+      "azimuth": -2.334674255051885,
+      "altitude": -0.00904850848019123,
+      "velocity": -0.024828536435961723,
+      "snr": 0.0,
+      "world_position": [
+        -21.297886989694465,
+        -22.23486673548736,
+        -0.27860606466986365
+      ],
+      "image_position": [
+        305,
+        391
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 238,
+      "direction": "right",
+      "depth": 52.47197723388672,
+      "azimuth": -1.9311418692257742,
+      "altitude": -0.02180955559015274,
+      "velocity": -0.05984071269631386,
+      "snr": 0.0,
+      "world_position": [
+        -18.49709346023858,
+        -49.09028932855954,
+        -1.1442997837272952
+      ],
+      "image_position": [
+        190,
+        379
+      ],
+      "hit_vehicle_id": 85,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 239,
+      "direction": "right",
+      "depth": 56.41969299316406,
+      "azimuth": -2.4121580282833914,
+      "altitude": 0.031986527144908905,
+      "velocity": 0.08775610476732254,
+      "snr": 0.0,
+      "world_position": [
+        -42.042259583929315,
+        -37.581570525199396,
+        1.8043623194507428
+      ],
+      "image_position": [
+        239,
+        480
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 240,
+      "direction": "right",
+      "depth": 43.3375129699707,
+      "azimuth": -1.2843106249955039,
+      "altitude": 0.05524934083223343,
+      "velocity": 0.15152718126773834,
+      "snr": 0.0,
+      "world_position": [
+        12.227754280223076,
+        -41.50776895467475,
+        2.393151079686291
+      ],
+      "image_position": [
+        222,
+        248
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 241,
+      "direction": "right",
+      "depth": 6.222038269042969,
+      "azimuth": -1.0846361378815512,
+      "altitude": -0.007827797904610634,
+      "velocity": -0.006136910989880562,
+      "snr": 0.0,
+      "world_position": [
+        2.9070614718881016,
+        -5.500943710432295,
+        -0.04870436073268985
+      ],
+      "image_position": [
+        377,
+        288
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 242,
+      "direction": "right",
+      "depth": 6.792548656463623,
+      "azimuth": -0.8869438330319266,
+      "altitude": -0.019202332943677902,
+      "velocity": -0.01505371741950512,
+      "snr": 0.0,
+      "world_position": [
+        4.290632020222573,
+        -5.264236269211006,
+        -0.1304247652476833
+      ],
+      "image_position": [
+        378,
+        282
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 243,
+      "direction": "right",
+      "depth": 8.003890991210938,
+      "azimuth": -0.716319934525762,
+      "altitude": 0.00956051517277956,
+      "velocity": 0.007495402358472347,
+      "snr": 0.0,
+      "world_position": [
+        6.036476496570158,
+        -5.255222846972181,
+        0.07652015554927497
+      ],
+      "image_position": [
+        378,
+        275
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 244,
+      "direction": "right",
+      "depth": 23.44027328491211,
+      "azimuth": -2.366448597111974,
+      "altitude": -0.048837095499038696,
+      "velocity": -0.13395582139492035,
+      "snr": 0.0,
+      "world_position": [
+        -16.723897752974832,
+        -16.384389931670555,
+        -1.1442998673338267
+      ],
+      "image_position": [
+        330,
+        371
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 245,
+      "direction": "right",
+      "depth": 13.659626007080078,
+      "azimuth": -2.0038381377842764,
+      "altitude": -0.05404757708311081,
+      "velocity": -0.14823445677757263,
+      "snr": 0.0,
+      "world_position": [
+        -5.723670369900276,
+        -12.380648954063854,
+        -0.737910310445414
+      ],
+      "image_position": [
+        347,
+        324
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 246,
+      "direction": "right",
+      "depth": 6.659420013427734,
+      "azimuth": -0.9126742641117911,
+      "altitude": -0.007392387371510267,
+      "velocity": -0.005795574281364679,
+      "snr": 0.0,
+      "world_position": [
+        4.0730045268879875,
+        -5.26840446318187,
+        -0.049228564037222346
+      ],
+      "image_position": [
+        378,
+        283
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 247,
+      "direction": "right",
+      "depth": 21.857059478759766,
+      "azimuth": -1.9833465973523001,
+      "altitude": -0.045396797358989716,
+      "velocity": -0.12452604621648788,
+      "snr": 0.0,
+      "world_position": [
+        -8.754492330900781,
+        -20.00265102498743,
+        -0.9918997221548256
+      ],
+      "image_position": [
+        315,
+        337
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 248,
+      "direction": "right",
+      "depth": 6.3795366287231445,
+      "azimuth": -1.109929041066442,
+      "altitude": -0.02487444505095482,
+      "velocity": -0.01949957013130188,
+      "snr": 0.0,
+      "world_position": [
+        2.8362622178583097,
+        -5.712173642360007,
+        -0.15867106950335616
+      ],
+      "image_position": [
+        376,
+        288
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 249,
+      "direction": "right",
+      "depth": 34.43228530883789,
+      "azimuth": -1.157824353375707,
+      "altitude": -0.028811246156692505,
+      "velocity": -0.07904716581106186,
+      "snr": 0.0,
+      "world_position": [
+        13.813084993108589,
+        -31.52454740888386,
+        -0.9918998071408142
+      ],
+      "image_position": [
+        265,
+        241
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 250,
+      "direction": "right",
+      "depth": 14.707087516784668,
+      "azimuth": -1.4003197709706168,
+      "altitude": -0.06749489903450012,
+      "velocity": -0.18506549298763275,
+      "snr": 0.0,
+      "world_position": [
+        2.4894059427927027,
+        -14.460892638888241,
+        -0.9918998764490595
+      ],
+      "image_position": [
+        338,
+        290
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 251,
+      "direction": "right",
+      "depth": 33.885345458984375,
+      "azimuth": -0.5540031949665885,
+      "altitude": 0.016205860301852226,
+      "velocity": 0.044466953724622726,
+      "snr": 0.0,
+      "world_position": [
+        28.813170306945803,
+        -17.82459884839174,
+        0.549117138287894
+      ],
+      "image_position": [
+        324,
+        177
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 252,
+      "direction": "right",
+      "depth": 7.513401508331299,
+      "azimuth": -0.779381469884191,
+      "altitude": 0.027642227709293365,
+      "velocity": 0.0216688122600317,
+      "snr": 0.0,
+      "world_position": [
+        5.342604380057141,
+        -5.278698484861648,
+        0.20766070766671196
+      ],
+      "image_position": [
+        378,
+        278
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 253,
+      "direction": "right",
+      "depth": 30.231674194335938,
+      "azimuth": -2.3952512900021414,
+      "altitude": 0.023647490888834,
+      "velocity": 0.06488274782896042,
+      "snr": 0.0,
+      "world_position": [
+        -22.189219503674074,
+        -20.520274633339863,
+        0.714836612489939
+      ],
+      "image_position": [
+        313,
+        395
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 254,
+      "direction": "right",
+      "depth": 52.41040802001953,
+      "azimuth": -2.4962651888516287,
+      "altitude": -0.012584773823618889,
+      "velocity": -0.03453173488378525,
+      "snr": 0.0,
+      "world_position": [
+        -41.867508850015525,
+        -31.520272171569168,
+        -0.6595557209225273
+      ],
+      "image_position": [
+        265,
+        479
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 255,
+      "direction": "right",
+      "depth": 41.55659484863281,
+      "azimuth": -1.4976746971395354,
+      "altitude": -0.0050135087221860886,
+      "velocity": -0.013757004402577877,
+      "snr": 0.0,
+      "world_position": [
+        3.0359406465751504,
+        -41.445026635280236,
+        -0.20834347794049635
+      ],
+      "image_position": [
+        223,
+        287
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 256,
+      "direction": "right",
+      "depth": 9.206189155578613,
+      "azimuth": -0.6655477444317679,
+      "altitude": 0.011860990896821022,
+      "velocity": 0.032545965164899826,
+      "snr": 0.0,
+      "world_position": [
+        7.240882715841382,
+        -5.684330512769014,
+        0.10919196548258317
+      ],
+      "image_position": [
+        376,
+        269
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 257,
+      "direction": "right",
+      "depth": 9.91175651550293,
+      "azimuth": -0.596492008366857,
+      "altitude": -0.00902995653450489,
+      "velocity": -0.02477807179093361,
+      "snr": 0.0,
+      "world_position": [
+        8.199773788403853,
+        -5.567640121324294,
+        -0.08950151417672272
+      ],
+      "image_position": [
+        377,
+        265
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 258,
+      "direction": "right",
+      "depth": 41.42472457885742,
+      "azimuth": -1.5694152587701122,
+      "altitude": -0.0002616945712361485,
+      "velocity": -0.000718083989340812,
+      "snr": 0.0,
+      "world_position": [
+        0.05721034240567419,
+        -41.42468365469743,
+        -0.010840625413504648
+      ],
+      "image_position": [
+        223,
+        300
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 259,
+      "direction": "right",
+      "depth": 33.717159271240234,
+      "azimuth": -2.350490049519811,
+      "altitude": -0.00838369969278574,
+      "velocity": -0.023008374497294426,
+      "snr": 0.0,
+      "world_position": [
+        -23.70440854219431,
+        -23.97640385805702,
+        -0.28267122647196824
+      ],
+      "image_position": [
+        298,
+        401
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 260,
+      "direction": "right",
+      "depth": 59.75397491455078,
+      "azimuth": -1.9510544995453696,
+      "altitude": 0.04495030269026756,
+      "velocity": 0.12330220639705658,
+      "snr": 0.0,
+      "world_position": [
+        -22.155895871330376,
+        -55.42963356121196,
+        2.685054840649357
+      ],
+      "image_position": [
+        163,
+        395
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 261,
+      "direction": "right",
+      "depth": 36.6481819152832,
+      "azimuth": -2.2334203282978873,
+      "altitude": 0.03019510768353939,
+      "velocity": 0.08287277072668076,
+      "snr": 0.0,
+      "world_position": [
+        -22.535232903171828,
+        -28.87954870747391,
+        1.1064276515593616
+      ],
+      "image_position": [
+        277,
+        396
+      ],
+      "hit_vehicle_id": 110,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 262,
+      "direction": "right",
+      "depth": 6.890128135681152,
+      "azimuth": -0.8702058951046805,
+      "altitude": -0.03078875131905079,
+      "velocity": -0.024134600535035133,
+      "snr": 0.0,
+      "world_position": [
+        4.439747976379251,
+        -5.264742646336419,
+        -0.21210492730716676
+      ],
+      "image_position": [
+        378,
+        281
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 263,
+      "direction": "right",
+      "depth": 41.56857681274414,
+      "azimuth": -1.494007752337728,
+      "altitude": -0.0007494632736779749,
+      "velocity": -0.0020565164741128683,
+      "snr": 0.0,
+      "world_position": [
+        3.188854862785536,
+        -41.44607113252092,
+        -0.031154118743693573
+      ],
+      "image_position": [
+        223,
+        287
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 264,
+      "direction": "right",
+      "depth": 62.26797866821289,
+      "azimuth": -1.6011495823648314,
+      "altitude": -0.015930211171507835,
+      "velocity": -0.04371066763997078,
+      "snr": 0.0,
+      "world_position": [
+        -1.8895058855157734,
+        -62.23139938274087,
+        -0.9919000954817945
+      ],
+      "image_position": [
+        134,
+        308
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 265,
+      "direction": "right",
+      "depth": 6.451379299163818,
+      "azimuth": -0.9577846686032156,
+      "altitude": 0.00019941541540902108,
+      "velocity": 0.00015631908900104463,
+      "snr": 0.0,
+      "world_position": [
+        3.711693642504887,
+        -5.2767057441906395,
+        0.0012865044743772802
+      ],
+      "image_position": [
+        378,
+        285
+      ],
+      "hit_vehicle_id": 94,
+      "is_hitting_vehicle": true
+    },
+    {
+      "id": 266,
+      "direction": "right",
+      "depth": 54.813724517822266,
+      "azimuth": -2.445134953656469,
+      "altitude": 0.010789751075208187,
+      "velocity": 0.029606517404317856,
+      "snr": 0.0,
+      "world_position": [
+        -42.04622365816688,
+        -35.16119594011581,
+        0.5914149676000758
+      ],
+      "image_position": [
+        250,
+        480
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 267,
+      "direction": "right",
+      "depth": 41.44355010986328,
+      "azimuth": -1.5464011980828385,
+      "altitude": -0.0005011162138544023,
+      "velocity": -0.0013750545913353562,
+      "snr": 0.0,
+      "world_position": [
+        1.0109203351033287,
+        -41.43121352885509,
+        -0.0207680340505372
+      ],
+      "image_position": [
+        223,
+        296
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    },
+    {
+      "id": 268,
+      "direction": "right",
+      "depth": 59.828285217285156,
+      "azimuth": -2.3493175665524344,
+      "altitude": 0.024644706398248672,
+      "velocity": 0.06761826574802399,
+      "snr": 0.0,
+      "world_position": [
+        -42.00030206305402,
+        -42.58197710777096,
+        1.4743012739297616
+      ],
+      "image_position": [
+        218,
+        480
+      ],
+      "hit_vehicle_id": null,
+      "is_hitting_vehicle": false
+    }
+  ]
+}
