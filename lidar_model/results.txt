@@ -1,0 +1,10 @@
+# LiDAR Point Cloud Classification Results
+
+Accuracy: 0.9698
+Precision (@ threshold=0.5): 0.5451
+Recall (@ threshold=0.5): 0.7576
+F1 Score (@ threshold=0.5): 0.6340
+mAP: 0.7148
+Best F1 Score: 0.7214 (@ threshold=0.9190)
+
+Date: 2025-04-30 19:19:28

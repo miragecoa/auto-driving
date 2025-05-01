@@ -1,0 +1,10 @@
+# Radar Point Cloud Classification Results
+
+Accuracy: 0.9304
+Precision (@ threshold=0.5): 0.8744
+Recall (@ threshold=0.5): 0.8950
+F1 Score (@ threshold=0.5): 0.8846
+mAP: 0.9608
+Best F1 Score: 0.8882 (@ threshold=0.5972)
+
+Date: 2025-04-30 19:39:52

@@ -1,0 +1,1 @@
+{"input_size": 7, "hidden_size": 64, "dropout_rate": 0.3, "features": ["x", "y", "z", "distance", "intensity", "norm_img_x", "norm_img_y"]}
